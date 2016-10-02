@@ -339,6 +339,10 @@ typedef unsigned short uip_stats_t;
 #define CC_CONF_INLINE inline
 #endif
 
+#define LEDS_GREEN		2
+#define LEDS_YELLOW		3
+#define LEDS_RED		4
+
 /* include the project config */
 /* PROJECT_CONF_H might be defined in the project Makefile */
 #ifdef PROJECT_CONF_H
