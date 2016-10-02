@@ -401,7 +401,7 @@ rs232_print(uint8_t port, char *buf)
 #if RS232_PRINTF_BUFFER_LENGTH
 /*---------------------------------------------------------------------------*/
 void
-rs232_printf(uint8_t port, const char *fmt, ...)
+rs232_printf(uint8_t port, const char *fmt)
 {
   va_list ap;
   static char buf[RS232_PRINTF_BUFFER_LENGTH];
@@ -440,4 +440,31 @@ int rs232_stdout_putchar(char c, FILE *stream)
 void rs232_redirect_stdout (uint8_t port) {
   stdout_rs232_port = port;
   stdout = &rs232_stdout;
+}
+
+
+// check if input data is ready
+
+//temp functions for now, probably not in correct format
+unsigned int rs232_ready(unsigned char port)
+{
+  if (port==0)
+    return ((UCSR0A & (1<<RXC0))!=0);
+  else if (port==1)
+    return ((UCSR1A & (1<<RXC1))!=0);
+  else
+    return 0;
+}
+
+// read a character
+
+char rs232_get(unsigned char port)
+{
+  while ( !rs232_ready(port) );
+  if (port==0)
+    return UDR0;
+  else if (port==1)
+    return UDR1;
+  else
+    return 0x00;
 }

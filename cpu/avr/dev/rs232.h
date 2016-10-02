@@ -37,6 +37,7 @@
 #define RS232_H_
 
 #include <avr/pgmspace.h>
+#include <avr/io.h>
 #include "contiki-conf.h"
 
 #if defined (__AVR_ATmega128__)
@@ -131,7 +132,7 @@ rs232_print(uint8_t port, char *buf);
  *             function to work.
  */
 void
-rs232_printf(uint8_t port, const char *fmt, ...);
+rs232_printf(uint8_t port, const char *fmt);
 
 /**
  * \brief      Print a character on RS232
@@ -159,4 +160,7 @@ rs232_send(uint8_t port, unsigned char c);
 void
 rs232_redirect_stdout (uint8_t port);
 
+
+unsigned int rs232_ready(unsigned char port);
+char rs232_get(unsigned char port);
 #endif /* RS232_H_ */
