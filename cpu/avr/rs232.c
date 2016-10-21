@@ -446,7 +446,7 @@ void rs232_redirect_stdout (uint8_t port) {
 // check if input data is ready
 
 //temp functions for now, probably not in correct format
-unsigned int rs232_ready(unsigned char port)
+/*unsigned int rs232_ready(unsigned char port)
 {
   if (port==0)
     return ((UCSR0A & (1<<RXC0))!=0);
@@ -467,4 +467,4 @@ char rs232_get(unsigned char port)
     return UDR1;
   else
     return 0x00;
-}
+}*/

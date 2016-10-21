@@ -161,6 +161,6 @@ void
 rs232_redirect_stdout (uint8_t port);
 
 
-unsigned int rs232_ready(unsigned char port);
-char rs232_get(unsigned char port);
+//unsigned int rs232_ready(unsigned char port);
+//char rs232_get(unsigned char port);
 #endif /* RS232_H_ */
