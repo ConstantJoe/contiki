@@ -55,10 +55,19 @@ PROCESS(serial_line_process, "Serial driver");
 
 process_event_t serial_line_event_message;
 
+
+
+#include "dev/rs232.h"
+
+
+
+
 /*---------------------------------------------------------------------------*/
 int
 serial_line_input_byte(unsigned char c)
 {
+  rs232_print(0, "in serial line input byte:\n\r");
+
   static uint8_t overflow = 0; /* Buffer overflow: ignore until END */
   
   if(IGNORE_CHAR(c)) {
@@ -80,6 +89,7 @@ serial_line_input_byte(unsigned char c)
   }
 
   /* Wake up consumer process */
+  rs232_print(0, "waking up process:\n\r");
   process_poll(&serial_line_process);
   return 1;
 }
@@ -91,6 +101,8 @@ PROCESS_THREAD(serial_line_process, ev, data)
 
   PROCESS_BEGIN();
 
+  rs232_print(0, "in separate process:\n\r");
+
   serial_line_event_message = process_alloc_event();
   ptr = 0;
 
@@ -100,25 +112,36 @@ PROCESS_THREAD(serial_line_process, ev, data)
     
     if(c == -1) {
       /* Buffer empty, wait for poll */
+      rs232_print(0, "wait for poll:\n\r");
       PROCESS_YIELD();
+      rs232_print(0, "polled!:\n\r");
     } else {
+
+      
       if(c != END) {
+        rs232_print(0, "char wasnt endline:\n\r");
         if(ptr < BUFSIZE-1) {
           buf[ptr++] = (uint8_t)c;
         } else {
           /* Ignore character (wait for EOL) */
         }
       } else {
+        rs232_print(0, "char WAS endline!\n\r");
         /* Terminate */
         buf[ptr++] = (uint8_t)'\0';
 
         /* Broadcast event */
+        rs232_print(0, "broadcast post:\n\r");
         process_post(PROCESS_BROADCAST, serial_line_event_message, buf);
-
+        //rs232_print(0, "post direct to example:\n\r");
+        //poll_example_process(buf);
+        //process_post(&example_process, serial_line_event_message, buf);
         /* Wait until all processes have handled the serial line event */
         if(PROCESS_ERR_OK ==
           process_post(PROCESS_CURRENT(), PROCESS_EVENT_CONTINUE, NULL)) {
+          rs232_print(0, "about to wait\n\r");
           PROCESS_WAIT_EVENT_UNTIL(ev == PROCESS_EVENT_CONTINUE);
+          rs232_print(0, "finished waiting\n\r");
         }
         ptr = 0;
       }
@@ -132,6 +155,7 @@ void
 serial_line_init(void)
 {
   ringbuf_init(&rxbuf, rxbuf_data, sizeof(rxbuf_data));
+  rs232_print(0, "start serial process:\n\r");
   process_start(&serial_line_process, NULL);
 }
 /*---------------------------------------------------------------------------*/

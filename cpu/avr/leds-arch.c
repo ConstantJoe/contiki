@@ -60,7 +60,9 @@ leds_arch_init(void)
 unsigned char
 leds_arch_get(void)
 {
-    return 0;
+    return ((PORTE & (1<<LEDS_RED)) ? 0 : LEDS_RED)
+         | ((PORTE & (1<<LEDS_GREEN)) ? 0 : LEDS_GREEN)
+         | ((PORTE & (1<<LEDS_YELLOW)) ? 0 : LEDS_YELLOW);
 }
 /*---------------------------------------------------------------------------*/
 void
