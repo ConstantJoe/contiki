@@ -83,6 +83,7 @@ sensors_changed(const struct sensors_sensor *s)
   sensors_flags[get_sensor_index(s)] |= FLAG_CHANGED;
   rs232_print(0, "poll sensor process\n\r");
   process_poll(&sensors_process);
+  rs232_print(0, "polled sensors process\n\r");
 }
 /*---------------------------------------------------------------------------*/
 const struct sensors_sensor *
@@ -115,8 +116,12 @@ PROCESS_THREAD(sensors_process, ev, data)
 
   for(i = 0; sensors[i] != NULL; ++i) {
     sensors_flags[i] = 0;
+    rs232_print(0, "in sensors loop\n\r");
     sensors[i]->configure(SENSORS_HW_INIT, 0);
+    rs232_print(0, "configured\n\r");
+
   }
+  rs232_print(0, "out of loop\n\r");
   num_sensors = i;
   while(1) {
 
@@ -127,7 +132,10 @@ PROCESS_THREAD(sensors_process, ev, data)
         events = 0;
         
         rs232_print(0, "num sensors: ");
-        rs232_print(0, num_sensors);
+        char c = num_sensors + '0';
+        char *pChar = &c;
+
+        rs232_print(0, pChar);
         rs232_print(0, "\n\r");
         for(i = 0; i < num_sensors; ++i) {
            rs232_print(0, "sens\n\r");

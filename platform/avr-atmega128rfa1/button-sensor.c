@@ -1,6 +1,7 @@
 /* Dummy sensor routine */
 
-//#include "lib/sensors.h"
+#include "contiki.h"
+#include "lib/sensors.h"
 #include "dev/button-sensor.h"
 #include "dev/rs232.h"
 #include <avr/interrupt.h> 
@@ -10,8 +11,13 @@
 
 const struct sensors_sensor button_sensor;
 static int status(int type);
-struct sensors_sensor *sensors[1];
-unsigned char sensors_flags[1];
+
+
+const struct sensors_sensor *sensors[] = {
+	&button_sensor,
+	0
+};
+unsigned char sensors_flags[(sizeof(sensors) / sizeof(struct sensors_sensor *))];
 
 
 static int configured = 0;
@@ -40,6 +46,7 @@ configure(int type, int c)
 	case SENSORS_ACTIVE:
 		if (c) {
 			if(!status(SENSORS_ACTIVE)) {
+				rs232_print(0, "button 1 conf \n\r");
 				DDRE &= ~(1<<BUTTON_BIT);
 				PORTE |= (1<<BUTTON_BIT); // enable pullup resistor
 
