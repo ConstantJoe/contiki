@@ -68,7 +68,9 @@ leds_arch_get(void)
 void
 leds_arch_set(unsigned char leds)
 {
-   if(leds & LEDS_GREEN) 
+   PORTE = ~leds;
+   //PORTE &= ~(1<<leds);
+   /*if(leds & LEDS_GREEN) 
    {
    	  PORTE &= ~(1<<LEDS_GREEN);
    }
@@ -93,6 +95,6 @@ leds_arch_set(unsigned char leds)
    else
    {
    	  PORTE |= (1<<LEDS_RED);
-   }
+   }*/
 }
 /*---------------------------------------------------------------------------*/
