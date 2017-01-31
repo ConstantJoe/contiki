@@ -176,24 +176,34 @@ void initialize(void)
 /* The Raven implements a serial command and data interface via uart0 to a 3290p,
  * which could be duplicated using another host computer.
  */
-#if !RF230BB_CONF_LEDONPORTE1   //Conflicts with USART0
-#ifdef RAVEN_LCD_INTERFACE
-  rs232_init(RS232_PORT_0, USART_BAUD_38400,USART_PARITY_NONE | USART_STOP_BITS_1 | USART_DATA_BITS_8);
-  rs232_set_input(0,raven_lcd_serial_input);
-#else
+//#if !RF230BB_CONF_LEDONPORTE1   //Conflicts with USART0
+//#ifdef RAVEN_LCD_INTERFACE
+//  rs232_init(RS232_PORT_0, USART_BAUD_38400,USART_PARITY_NONE | USART_STOP_BITS_1 | USART_DATA_BITS_8);
+//  rs232_set_input(0,raven_lcd_serial_input);
+//#else
   /* Generic or slip connection on uart0 */
-  rs232_init(RS232_PORT_0, USART_BAUD_38400,USART_PARITY_NONE | USART_STOP_BITS_1 | USART_DATA_BITS_8);
-#endif
-#endif
+//  rs232_init(RS232_PORT_0, USART_BAUD_38400,USART_PARITY_NONE | USART_STOP_BITS_1 | USART_DATA_BITS_8);
+//#endif
+//#endif
+
+  rs232_init(RS232_PORT_0, USART_BAUD_38400,USART_PARITY_NONE_0 | USART_STOP_BITS_1 | USART_DATA_BITS_8_0);
+  rs232_init(RS232_PORT_1, USART_BAUD_38400,USART_PARITY_NONE_1 | USART_STOP_BITS_1 | USART_DATA_BITS_8_1);
+
+  //rs232_set_input(RS232_PORT_0,serial_line_input_byte);
+  //rs232_set_input(RS232_PORT_1,serial_line_input_byte);
+
+  //serial_line_init();
+  //rs232_redirect_stdout(RS232_PORT_0);
+
 
   /* Second rs232 port for debugging or slip alternative */
-  rs232_init(RS232_PORT_1, USART_BAUD_57600,USART_PARITY_NONE | USART_STOP_BITS_1 | USART_DATA_BITS_8);
+  //rs232_init(RS232_PORT_1, USART_BAUD_57600,USART_PARITY_NONE | USART_STOP_BITS_1 | USART_DATA_BITS_8);
   /* Redirect stdout */
-#if RF230BB_CONF_LEDONPORTE1 || defined(RAVEN_LCD_INTERFACE)
-  rs232_redirect_stdout(RS232_PORT_1);
-#else
-  rs232_redirect_stdout(RS232_PORT_0);
-#endif
+//#if RF230BB_CONF_LEDONPORTE1 || defined(RAVEN_LCD_INTERFACE)
+//  rs232_redirect_stdout(RS232_PORT_1);
+//#else
+//  rs232_redirect_stdout(RS232_PORT_0);
+//#endif
   clock_init();
 
   if(MCUSR & (1<<PORF )) PRINTD("Power-on reset.\n");
@@ -385,12 +395,6 @@ uint8_t i;
    PRINTA("Online\n");
 #endif
 #endif /* ANNOUNCE_BOOT */
-
-#if RF230BB_CONF_LEDONPORTE1
-  /* NB: PORTE1 conflicts with UART0 */
-  DDRE|=(1<<DDE1);  //set led pin to output (Micheal Hatrtman board)
-  PORTE&=~(1<<PE1); //and low to turn led off
-#endif
 }
 
 #if ROUTES && NETSTACK_CONF_WITH_IPV6

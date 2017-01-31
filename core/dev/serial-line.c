@@ -34,6 +34,7 @@
 
 #include "lib/ringbuf.h"
 
+
 #ifdef SERIAL_LINE_CONF_BUFSIZE
 #define BUFSIZE SERIAL_LINE_CONF_BUFSIZE
 #else /* SERIAL_LINE_CONF_BUFSIZE */

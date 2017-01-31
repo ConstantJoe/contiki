@@ -95,48 +95,72 @@ or set the rate in contiki-conf.h"
 /******************************************************************************/
 /***   Interrupt settings                                                     */
 /******************************************************************************/
-#define USART_INTERRUPT_RX_COMPLETE _BV (RXCIE0)
-#define USART_INTERRUPT_TX_COMPLETE _BV (TXCIE0)
-#define USART_INTERRUPT_DATA_REG_EMPTY _BV (UDRIE0)
+#define USART_INTERRUPT_RX_COMPLETE_0 _BV (RXCIE0)
+#define USART_INTERRUPT_TX_COMPLETE_0 _BV (TXCIE0)
+#define USART_INTERRUPT_DATA_REG_EMPTY_0 _BV (UDRIE0)
+
+#define USART_INTERRUPT_RX_COMPLETE_1 _BV (RXCIE1)
+#define USART_INTERRUPT_TX_COMPLETE_1 _BV (TXCIE1)
+#define USART_INTERRUPT_DATA_REG_EMPTY_1 _BV (UDRIE1)
 
 /******************************************************************************/
 /***   Receiver / transmitter                                                 */
 /******************************************************************************/
-#define USART_RECEIVER_ENABLE _BV (RXEN0)
-#define USART_TRANSMITTER_ENABLE _BV (TXEN0)
+#define USART_RECEIVER_ENABLE_0 _BV (RXEN0)
+#define USART_TRANSMITTER_ENABLE_0 _BV (TXEN0)
+
+#define USART_RECEIVER_ENABLE_1 _BV (RXEN1)
+#define USART_TRANSMITTER_ENABLE_1 _BV (TXEN1)
 
 /******************************************************************************/
 /***   Mode select                                                            */
 /******************************************************************************/
-#define USART_MODE_ASYNC 0x00
-#define USART_MODE_SYNC _BV (UMSEL00)
+#define USART_MODE_ASYNC_0 0x00
+#define USART_MODE_SYNC_0 _BV (UMSEL00)
+
+#define USART_MODE_ASYNC_1 0x00
+#define USART_MODE_SYNC_1 _BV (UMSEL10)
 
 /******************************************************************************/
 /***   Parity                                                                 */
 /******************************************************************************/
-#define USART_PARITY_NONE 0x00
-#define USART_PARITY_EVEN _BV (UPM01)
-#define USART_PARITY_ODD  _BV (UPM01) | _BV (UPM00)
+#define USART_PARITY_NONE_0 0x00
+#define USART_PARITY_EVEN_0 _BV (UPM01)
+#define USART_PARITY_ODD_0  _BV (UPM01) | _BV (UPM00)
+
+#define USART_PARITY_NONE_1 0x00
+#define USART_PARITY_EVEN_1 _BV (UPM11)
+#define USART_PARITY_ODD_1  _BV (UPM11) | _BV (UPM10)
 
 /******************************************************************************/
 /***   Stop bits                                                              */
 /******************************************************************************/
 #define USART_STOP_BITS_1 0x00
-#define USART_STOP_BITS_2 _BV (USBS)
+#define USART_STOP_BITS_2_1 _BV (USBS0)
+#define USART_STOP_BITS_2_2 _BV (USBS1)
 
 /******************************************************************************/
 /***   Character size                                                         */
 /******************************************************************************/
-#define USART_DATA_BITS_5 0x00
-#define USART_DATA_BITS_6 _BV (UCSZ00)
-#define USART_DATA_BITS_7 _BV (UCSZ01)
-#define USART_DATA_BITS_8 _BV (UCSZ01) | _BV (UCSZ00)
+#define USART_DATA_BITS_5_0 0x00
+#define USART_DATA_BITS_6_0 _BV (UCSZ00)
+#define USART_DATA_BITS_7_0 _BV (UCSZ01)
+#define USART_DATA_BITS_8_0 _BV (UCSZ01) | _BV (UCSZ00)
 // #define USART_DATA_BITS_9 (needs also UCSZ2 bit in UCSRnB)
+
+
+#define USART_DATA_BITS_5_1 0x00
+#define USART_DATA_BITS_6_1 _BV (UCSZ10)
+#define USART_DATA_BITS_7_1 _BV (UCSZ11)
+#define USART_DATA_BITS_8_1 _BV (UCSZ11) | _BV (UCSZ10)
 
 /******************************************************************************/
 /***   Clock polarity                                                         */
 /******************************************************************************/
-#define USART_RISING_XCKN_EDGE 0x00
-#define USART_FALLING_XCKN_EDGE _BV (UCPOL0)
+#define USART_RISING_XCKN_EDGE_0 0x00
+#define USART_FALLING_XCKN_EDGE_0 _BV (UCPOL0)
+
+#define USART_RISING_XCKN_EDGE_1 0x00
+#define USART_FALLING_XCKN_EDGE_1 _BV (UCPOL1)
 
 #endif /* #ifndef __RS232_ATMEGA128RFA1__ */
