@@ -219,9 +219,6 @@
 int (* input_handler_0)(unsigned char);
 ISR(D_USART0_RX_vect)
 {
-  //rs232_print(0, "ISR0:");
-  //rs232_print(0, D_USART0_RX_vect);
-  //rs232_print(0, "\r\n");
   unsigned char c;
   c = D_UDR0;
   if (input_handler_0 != NULL) input_handler_0(c);
@@ -238,7 +235,6 @@ ISR(D_USART0_TX_vect)
 int (* input_handler_1)(unsigned char);
 ISR(D_USART1_RX_vect)
 {
-  //rs232_send(0, 'j');
   unsigned char c;
   c = D_UDR1;
   if (input_handler_1 != NULL) input_handler_1(c);
@@ -377,7 +373,6 @@ rs232_send(uint8_t port, unsigned char c)
     while (txwait_0);
 #if NUMPORTS > 1
   } else if (port == 1) {
-    //rs232_send(0, 'a');
     txwait_1 = 1;
     D_UDR1 = c;
     while (txwait_1);
@@ -399,9 +394,7 @@ rs232_send(uint8_t port, unsigned char c)
 #if NUMPORTS > 1
   } else if (port == 1) {
     //while (!(D_UCSR1A & D_UDRE1M));
-    //rs232_send(0, 'b');
     //D_UDR1 = c;
-
     while ( !(UCSR1A & (1<<UDRE1)) );
     UDR1 = c;
 
@@ -440,27 +433,13 @@ rs232_print(uint8_t port, char *buf)
 {
   while(*buf) {
 #if ADD_CARRIAGE_RETURN_AFTER_NEWLINE
-    /*if(port == 1)
-    {
-      rs232_send(0, *buf);
-      rs232_send(port, *buf++);
-    }
-    else
-    {*/
-      if(*buf=='\n') rs232_send(port, '\r');
+    if(*buf=='\n') rs232_send(port, '\r');
     if(*buf=='\r') buf++; else rs232_send(port, *buf++);
-    //}
     
 #else
     rs232_send(port, *buf++);
 #endif
   }
-
-  if(port == 1)
-    {
-      //rs232_send(0, *buf);
-      rs232_send(port, '\n');
-    }
 }
 
 #if RS232_PRINTF_BUFFER_LENGTH
@@ -506,30 +485,3 @@ void rs232_redirect_stdout (uint8_t port) {
   stdout_rs232_port = port;
   stdout = &rs232_stdout;
 }
-
-
-// check if input data is ready
-
-//temp functions for now, probably not in correct format
-/*unsigned int rs232_ready(unsigned char port)
-{
-  if (port==0)
-    return ((UCSR0A & (1<<RXC0))!=0);
-  else if (port==1)
-    return ((UCSR1A & (1<<RXC1))!=0);
-  else
-    return 0;
-}
-
-// read a character
-
-char rs232_get(unsigned char port)
-{
-  while ( !rs232_ready(port) );
-  if (port==0)
-    return UDR0;
-  else if (port==1)
-    return UDR1;
-  else
-    return 0x00;
-}*/

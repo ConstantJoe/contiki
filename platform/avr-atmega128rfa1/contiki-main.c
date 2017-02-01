@@ -173,6 +173,8 @@ void initialize(void)
   watchdog_init();
   watchdog_start();
 
+
+  
 /* The Raven implements a serial command and data interface via uart0 to a 3290p,
  * which could be duplicated using another host computer.
  */
@@ -186,16 +188,6 @@ void initialize(void)
 //#endif
 //#endif
 
-  rs232_init(RS232_PORT_0, USART_BAUD_57600,USART_PARITY_NONE_0 | USART_STOP_BITS_1 | USART_DATA_BITS_8_0);
-  rs232_init(RS232_PORT_1, USART_BAUD_57600,USART_PARITY_NONE_1 | USART_STOP_BITS_1 | USART_DATA_BITS_8_1);
-
-  //rs232_set_input(RS232_PORT_0,serial_line_input_byte);
-  //rs232_set_input(RS232_PORT_1,serial_line_input_byte);
-
-  //serial_line_init();
-  //rs232_redirect_stdout(RS232_PORT_0);
-
-
   /* Second rs232 port for debugging or slip alternative */
   //rs232_init(RS232_PORT_1, USART_BAUD_57600,USART_PARITY_NONE | USART_STOP_BITS_1 | USART_DATA_BITS_8);
   /* Redirect stdout */
@@ -204,6 +196,10 @@ void initialize(void)
 //#else
 //  rs232_redirect_stdout(RS232_PORT_0);
 //#endif
+
+  rs232_init(RS232_PORT_0, USART_BAUD_57600,USART_PARITY_NONE_0 | USART_STOP_BITS_1 | USART_DATA_BITS_8_0);
+  rs232_init(RS232_PORT_1, USART_BAUD_57600,USART_PARITY_NONE_1 | USART_STOP_BITS_1 | USART_DATA_BITS_8_1);
+
   clock_init();
 
   if(MCUSR & (1<<PORF )) PRINTD("Power-on reset.\n");

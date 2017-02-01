@@ -38,8 +38,6 @@
 
 #include "lib/sensors.h"
 
-#include "dev/rs232.h"
-
 const extern struct sensors_sensor *sensors[];
 extern unsigned char sensors_flags[];
 
@@ -79,11 +77,8 @@ sensors_next(const struct sensors_sensor *s)
 void
 sensors_changed(const struct sensors_sensor *s)
 {
-  //rs232_print(0, "sensor has changed\n\r");
   sensors_flags[get_sensor_index(s)] |= FLAG_CHANGED;
-  //rs232_print(0, "poll sensor process\n\r");
   process_poll(&sensors_process);
-  //rs232_print(0, "polled sensors process\n\r");
 }
 /*---------------------------------------------------------------------------*/
 const struct sensors_sensor *
@@ -111,36 +106,21 @@ PROCESS_THREAD(sensors_process, ev, data)
 
   PROCESS_BEGIN();
 
- // rs232_print(0, "start sensor process\n\r");
   sensors_event = process_alloc_event();
 
   for(i = 0; sensors[i] != NULL; ++i) {
     sensors_flags[i] = 0;
-    //rs232_print(0, "in sensors loop\n\r");
     sensors[i]->configure(SENSORS_HW_INIT, 0);
-    //rs232_print(0, "configured\n\r");
-
   }
-  //rs232_print(0, "out of loop\n\r");
   num_sensors = i;
   while(1) {
 
     PROCESS_WAIT_EVENT();
 
-    //rs232_print(0, "back in sensor process\n\r");
     do {
         events = 0;
-        
-        //rs232_print(0, "num sensors: ");
-        char c = num_sensors + '0';
-        char *pChar = &c;
-
-        //rs232_print(0, pChar);
-        //rs232_print(0, "\n\r");
         for(i = 0; i < num_sensors; ++i) {
-           //rs232_print(0, "sens\n\r");
 	         if(sensors_flags[i] & FLAG_CHANGED) {
-	             //rs232_print(0, "broadcast sensor event\n\r");
 	             if(process_post(PROCESS_BROADCAST, sensors_event, (void *)sensors[i]) == PROCESS_ERR_OK) {
 	                 PROCESS_WAIT_EVENT_UNTIL(ev == sensors_event);
 	             }

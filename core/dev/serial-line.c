@@ -34,9 +34,6 @@
 
 #include "lib/ringbuf.h"
 
-#include "dev/rs232.h"
-
-
 #ifdef SERIAL_LINE_CONF_BUFSIZE
 #define BUFSIZE SERIAL_LINE_CONF_BUFSIZE
 #else /* SERIAL_LINE_CONF_BUFSIZE */
@@ -51,8 +48,13 @@
 #define IGNORE_CHAR(c) (c == 0x0d)
 #define END 0x0a
 
+/*Duplicating serial line process to enable differenciation between data coming from UART0 and UART1.*/
 //static struct ringbuf rxbuf;
 //static uint8_t rxbuf_data[BUFSIZE];
+
+//PROCESS(serial_line_process, "Serial driver");
+
+//process_event_t serial_line_event_message;v
 
 static struct ringbuf rxbuf_0;
 static uint8_t rxbuf_data_0[BUFSIZE];
@@ -60,12 +62,9 @@ static uint8_t rxbuf_data_0[BUFSIZE];
 static struct ringbuf rxbuf_1;
 static uint8_t rxbuf_data_1[BUFSIZE];
 
-//PROCESS(serial_line_process, "Serial driver");
 
 PROCESS(serial_line_process_0, "Serial driver 0");
 PROCESS(serial_line_process_1, "Serial driver 1");
-
-//process_event_t serial_line_event_message;
 
 process_event_t serial_line_event_message_0;
 process_event_t serial_line_event_message_1;
@@ -74,8 +73,6 @@ process_event_t serial_line_event_message_1;
 int
 serial_line_input_byte_0(unsigned char c)
 {
-  //rs232_print(0, "in serial line input byte 0 \n\r");
-
   static uint8_t overflow = 0; /* Buffer overflow: ignore until END */
   
   if(IGNORE_CHAR(c)) {
@@ -105,8 +102,6 @@ serial_line_input_byte_0(unsigned char c)
 int
 serial_line_input_byte_1(unsigned char c)
 {
-  //rs232_print(0, "in serial line input byte 1 \n\r");
-
   static uint8_t overflow = 0; /* Buffer overflow: ignore until END */
   
   if(IGNORE_CHAR(c)) {
@@ -188,8 +183,6 @@ PROCESS_THREAD(serial_line_process_1, ev, data)
   serial_line_event_message_1 = process_alloc_event();
   ptr = 0;
 
-  //rs232_print(0, "process started \n\r");
-
   while(1) {
     /* Fill application buffer until newline or empty */
     int c = ringbuf_get(&rxbuf_1);
@@ -197,19 +190,15 @@ PROCESS_THREAD(serial_line_process_1, ev, data)
     if(c == -1) {
       /* Buffer empty, wait for poll */
       PROCESS_YIELD();
-      //rs232_print(0, "back \n\r");
     } else {
       if(c != END) {
         if(ptr < BUFSIZE-1) {
           buf[ptr++] = (uint8_t)c;
-          //rs232_print(0, "add char to buffer \n\r");
         } else {
-          //rs232_print(0, "ignore char \n\r");
           /* Ignore character (wait for EOL) */
         }
       } else {
         /* Terminate */
-        //rs232_print(0, "ending \n\r");
         buf[ptr++] = (uint8_t)'\0';
 
         /* Broadcast event */

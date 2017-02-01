@@ -24,7 +24,6 @@ static int configured = 0;
 
 ISR(INT5_vect)
 {
-	//rs232_print(0, "in isr \n\r");
   	if((EIFR & INTF5) ? 0 : 1) {
    	sensors_changed(&button_sensor);
   	}
@@ -33,20 +32,16 @@ ISR(INT5_vect)
 static int
 value(int type)
 {
-	//rs232_print(0, "button 1\n\r");
-	//return ((PINE&BUTTON_MASK)==0);
 	return (PORTE & _BV(PE5) ? 0 : 1);
 }
 
 static int
 configure(int type, int c)
 {
-	//rs232_print(0, "button 2\n\r");
 	switch (type) {
 	case SENSORS_ACTIVE:
 		if (c) {
 			if(!status(SENSORS_ACTIVE)) {
-				//rs232_print(0, "button 1 conf \n\r");
 				DDRE &= ~(1<<BUTTON_BIT);
 				PORTE |= (1<<BUTTON_BIT); // enable pullup resistor
 
@@ -67,7 +62,6 @@ configure(int type, int c)
 static int
 status(int type)
 {
-	//rs232_print(0, "button 3\n\r");
 	switch (type) {
 	case SENSORS_ACTIVE:
 	case SENSORS_READY:
