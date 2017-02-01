@@ -67,7 +67,10 @@ extern process_event_t serial_line_event_message;
  * \return Non-zero if the CPU should be powered up, zero otherwise.
  */
 
-int serial_line_input_byte(unsigned char c);
+int serial_line_input_byte_0(unsigned char c);
+int serial_line_input_byte_1(unsigned char c);
+
+//int serial_line_input_byte(unsigned char c);
 
 void serial_line_init(void);
 

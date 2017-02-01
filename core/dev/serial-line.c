@@ -34,6 +34,8 @@
 
 #include "lib/ringbuf.h"
 
+#include "dev/rs232.h"
+
 
 #ifdef SERIAL_LINE_CONF_BUFSIZE
 #define BUFSIZE SERIAL_LINE_CONF_BUFSIZE
@@ -52,19 +54,59 @@
 static struct ringbuf rxbuf;
 static uint8_t rxbuf_data[BUFSIZE];
 
-PROCESS(serial_line_process, "Serial driver");
+//PROCESS(serial_line_process, "Serial driver");
 
-process_event_t serial_line_event_message;
+PROCESS(serial_line_process_0, "Serial driver 0");
+PROCESS(serial_line_process_1, "Serial driver 1");
+
+//process_event_t serial_line_event_message;
+
+process_event_t serial_line_event_message_0;
+process_event_t serial_line_event_message_1;
 
 /*---------------------------------------------------------------------------*/
 int
-serial_line_input_byte(unsigned char c)
+serial_line_input_byte_0(unsigned char c)
 {
+  rs232_print(0, "in serial line input byte 0 \n\r");
+
   static uint8_t overflow = 0; /* Buffer overflow: ignore until END */
   
   if(IGNORE_CHAR(c)) {
     return 0;
   }
+
+  if(!overflow) {
+    /* Add character */
+    if(ringbuf_put(&rxbuf, c) == 0) {
+      /* Buffer overflow: ignore the rest of the line */
+      overflow = 1;
+    }
+  } else {
+    /* Buffer overflowed:
+     * Only (try to) add terminator characters, otherwise skip */
+    if(c == END && ringbuf_put(&rxbuf, c) != 0) {
+      overflow = 0;
+    }
+  }
+
+  /* Wake up consumer process */
+  process_poll(&serial_line_process);
+  return 1;
+}
+
+/*---------------------------------------------------------------------------*/
+int
+serial_line_input_byte_1(unsigned char c)
+{
+  rs232_print(0, "in serial line input byte 1 \n\r");
+
+  static uint8_t overflow = 0; /* Buffer overflow: ignore until END */
+  
+  if(IGNORE_CHAR(c)) {
+    return 0;
+  }
+
 
   if(!overflow) {
     /* Add character */
@@ -128,6 +170,52 @@ PROCESS_THREAD(serial_line_process, ev, data)
 
   PROCESS_END();
 }
+
+/*---------------------------------------------------------------------------*/
+PROCESS_THREAD(serial_line_process, ev, data)
+{
+  static char buf[BUFSIZE];
+  static int ptr;
+
+  PROCESS_BEGIN();
+
+  serial_line_event_message = process_alloc_event();
+  ptr = 0;
+
+  while(1) {
+    /* Fill application buffer until newline or empty */
+    int c = ringbuf_get(&rxbuf);
+    
+    if(c == -1) {
+      /* Buffer empty, wait for poll */
+      PROCESS_YIELD();
+    } else {
+      if(c != END) {
+        if(ptr < BUFSIZE-1) {
+          buf[ptr++] = (uint8_t)c;
+        } else {
+          /* Ignore character (wait for EOL) */
+        }
+      } else {
+        /* Terminate */
+        buf[ptr++] = (uint8_t)'\0';
+
+        /* Broadcast event */
+        process_post(PROCESS_BROADCAST, serial_line_event_message, buf);
+
+        /* Wait until all processes have handled the serial line event */
+        if(PROCESS_ERR_OK ==
+          process_post(PROCESS_CURRENT(), PROCESS_EVENT_CONTINUE, NULL)) {
+          PROCESS_WAIT_EVENT_UNTIL(ev == PROCESS_EVENT_CONTINUE);
+        }
+        ptr = 0;
+      }
+    }
+  }
+
+  PROCESS_END();
+}
+
 /*---------------------------------------------------------------------------*/
 void
 serial_line_init(void)
