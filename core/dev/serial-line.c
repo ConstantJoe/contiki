@@ -51,8 +51,14 @@
 #define IGNORE_CHAR(c) (c == 0x0d)
 #define END 0x0a
 
-static struct ringbuf rxbuf;
-static uint8_t rxbuf_data[BUFSIZE];
+//static struct ringbuf rxbuf;
+//static uint8_t rxbuf_data[BUFSIZE];
+
+static struct ringbuf rxbuf_0;
+static uint8_t rxbuf_data_0[BUFSIZE];
+
+static struct ringbuf rxbuf_1;
+static uint8_t rxbuf_data_1[BUFSIZE];
 
 //PROCESS(serial_line_process, "Serial driver");
 
@@ -68,7 +74,7 @@ process_event_t serial_line_event_message_1;
 int
 serial_line_input_byte_0(unsigned char c)
 {
-  rs232_print(0, "in serial line input byte 0 \n\r");
+  //rs232_print(0, "in serial line input byte 0 \n\r");
 
   static uint8_t overflow = 0; /* Buffer overflow: ignore until END */
   
@@ -78,20 +84,20 @@ serial_line_input_byte_0(unsigned char c)
 
   if(!overflow) {
     /* Add character */
-    if(ringbuf_put(&rxbuf, c) == 0) {
+    if(ringbuf_put(&rxbuf_0, c) == 0) {
       /* Buffer overflow: ignore the rest of the line */
       overflow = 1;
     }
   } else {
     /* Buffer overflowed:
      * Only (try to) add terminator characters, otherwise skip */
-    if(c == END && ringbuf_put(&rxbuf, c) != 0) {
+    if(c == END && ringbuf_put(&rxbuf_0, c) != 0) {
       overflow = 0;
     }
   }
 
   /* Wake up consumer process */
-  process_poll(&serial_line_process);
+  process_poll(&serial_line_process_0);
   return 1;
 }
 
@@ -99,7 +105,7 @@ serial_line_input_byte_0(unsigned char c)
 int
 serial_line_input_byte_1(unsigned char c)
 {
-  rs232_print(0, "in serial line input byte 1 \n\r");
+  //rs232_print(0, "in serial line input byte 1 \n\r");
 
   static uint8_t overflow = 0; /* Buffer overflow: ignore until END */
   
@@ -110,36 +116,36 @@ serial_line_input_byte_1(unsigned char c)
 
   if(!overflow) {
     /* Add character */
-    if(ringbuf_put(&rxbuf, c) == 0) {
+    if(ringbuf_put(&rxbuf_1, c) == 0) {
       /* Buffer overflow: ignore the rest of the line */
       overflow = 1;
     }
   } else {
     /* Buffer overflowed:
      * Only (try to) add terminator characters, otherwise skip */
-    if(c == END && ringbuf_put(&rxbuf, c) != 0) {
+    if(c == END && ringbuf_put(&rxbuf_1, c) != 0) {
       overflow = 0;
     }
   }
 
   /* Wake up consumer process */
-  process_poll(&serial_line_process);
+  process_poll(&serial_line_process_1);
   return 1;
 }
 /*---------------------------------------------------------------------------*/
-PROCESS_THREAD(serial_line_process, ev, data)
+PROCESS_THREAD(serial_line_process_0, ev, data)
 {
   static char buf[BUFSIZE];
   static int ptr;
 
   PROCESS_BEGIN();
 
-  serial_line_event_message = process_alloc_event();
+  serial_line_event_message_0 = process_alloc_event();
   ptr = 0;
 
   while(1) {
     /* Fill application buffer until newline or empty */
-    int c = ringbuf_get(&rxbuf);
+    int c = ringbuf_get(&rxbuf_0);
     
     if(c == -1) {
       /* Buffer empty, wait for poll */
@@ -156,7 +162,7 @@ PROCESS_THREAD(serial_line_process, ev, data)
         buf[ptr++] = (uint8_t)'\0';
 
         /* Broadcast event */
-        process_post(PROCESS_BROADCAST, serial_line_event_message, buf);
+        process_post(PROCESS_BROADCAST, serial_line_event_message_0, buf);
 
         /* Wait until all processes have handled the serial line event */
         if(PROCESS_ERR_OK ==
@@ -172,36 +178,42 @@ PROCESS_THREAD(serial_line_process, ev, data)
 }
 
 /*---------------------------------------------------------------------------*/
-PROCESS_THREAD(serial_line_process, ev, data)
+PROCESS_THREAD(serial_line_process_1, ev, data)
 {
   static char buf[BUFSIZE];
   static int ptr;
 
   PROCESS_BEGIN();
 
-  serial_line_event_message = process_alloc_event();
+  serial_line_event_message_1 = process_alloc_event();
   ptr = 0;
+
+  //rs232_print(0, "process started \n\r");
 
   while(1) {
     /* Fill application buffer until newline or empty */
-    int c = ringbuf_get(&rxbuf);
+    int c = ringbuf_get(&rxbuf_1);
     
     if(c == -1) {
       /* Buffer empty, wait for poll */
       PROCESS_YIELD();
+      //rs232_print(0, "back \n\r");
     } else {
       if(c != END) {
         if(ptr < BUFSIZE-1) {
           buf[ptr++] = (uint8_t)c;
+          //rs232_print(0, "add char to buffer \n\r");
         } else {
+          //rs232_print(0, "ignore char \n\r");
           /* Ignore character (wait for EOL) */
         }
       } else {
         /* Terminate */
+        //rs232_print(0, "ending \n\r");
         buf[ptr++] = (uint8_t)'\0';
 
         /* Broadcast event */
-        process_post(PROCESS_BROADCAST, serial_line_event_message, buf);
+        process_post(PROCESS_BROADCAST, serial_line_event_message_1, buf);
 
         /* Wait until all processes have handled the serial line event */
         if(PROCESS_ERR_OK ==
@@ -220,7 +232,13 @@ PROCESS_THREAD(serial_line_process, ev, data)
 void
 serial_line_init(void)
 {
-  ringbuf_init(&rxbuf, rxbuf_data, sizeof(rxbuf_data));
-  process_start(&serial_line_process, NULL);
+  //ringbuf_init(&rxbuf, rxbuf_data, sizeof(rxbuf_data));
+  //process_start(&serial_line_process, NULL);
+
+  ringbuf_init(&rxbuf_0, rxbuf_data_0, sizeof(rxbuf_data_0));
+  process_start(&serial_line_process_0, NULL);
+
+  ringbuf_init(&rxbuf_1, rxbuf_data_1, sizeof(rxbuf_data_1));
+  process_start(&serial_line_process_1, NULL);
 }
 /*---------------------------------------------------------------------------*/

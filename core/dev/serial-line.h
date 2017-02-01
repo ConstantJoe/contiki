@@ -48,8 +48,11 @@
  * from the serial port. A data pointer to the incoming line of input
  * is sent together with the event.
  */
-extern process_event_t serial_line_event_message;
 
+//extern process_event_t serial_line_event_message;
+
+extern process_event_t serial_line_event_message_0;
+extern process_event_t serial_line_event_message_1;
 /**
  * Get one byte of input from the serial driver.
  *

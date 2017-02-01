@@ -238,7 +238,7 @@ ISR(D_USART0_TX_vect)
 int (* input_handler_1)(unsigned char);
 ISR(D_USART1_RX_vect)
 {
-  rs232_send(0, 'j');
+  //rs232_send(0, 'j');
   unsigned char c;
   c = D_UDR1;
   if (input_handler_1 != NULL) input_handler_1(c);
@@ -438,39 +438,18 @@ rs232_set_input(uint8_t port, int (*f)(unsigned char))
 void
 rs232_print(uint8_t port, char *buf)
 {
-  if(port == 1)
-  {
-    rs232_print(0, "test recursive\n\r");
-    if(NUMPORTS ==1)
-    {
-      rs232_print(0, "just one \n\r");
-    }
-    else if(NUMPORTS == 2)
-    {
-      rs232_print(0, "two \n\r");
-    }
-    else
-    {
-      rs232_print(0, "something else\n\r");
-    }
-    
-
-    
-  }
-  
-
   while(*buf) {
 #if ADD_CARRIAGE_RETURN_AFTER_NEWLINE
-    if(port == 1)
+    /*if(port == 1)
     {
       rs232_send(0, *buf);
       rs232_send(port, *buf++);
     }
     else
-    {
+    {*/
       if(*buf=='\n') rs232_send(port, '\r');
     if(*buf=='\r') buf++; else rs232_send(port, *buf++);
-    }
+    //}
     
 #else
     rs232_send(port, *buf++);
