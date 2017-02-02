@@ -73,13 +73,13 @@ configure(int type, int c)
   case SENSORS_ACTIVE:
     if (c) {
       if(!status(SENSORS_ACTIVE)) {
-	       timer_set(&debouncetimer, 0);
-	       BUTTON_IRQ_EDGE_SELECTD();
+  timer_set(&debouncetimer, 0);
+  BUTTON_IRQ_EDGE_SELECTD();
 
-	       BUTTON_SELECT();
-	       BUTTON_MAKE_INPUT();
+  BUTTON_SELECT();
+  BUTTON_MAKE_INPUT();
 
-	       BUTTON_ENABLE_IRQ();
+  BUTTON_ENABLE_IRQ();
       }
     } else {
       BUTTON_DISABLE_IRQ();
@@ -101,4 +101,4 @@ status(int type)
 }
 /*---------------------------------------------------------------------------*/
 SENSORS_SENSOR(button_sensor, BUTTON_SENSOR,
-	       value, configure, status);
+         value, configure, status);

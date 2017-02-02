@@ -1,13 +1,6 @@
-/* Dummy sensor routine */
-
-#include "contiki.h"
-#include "lib/sensors.h"
 #include "dev/button-sensor.h"
-#include "dev/rs232.h"
-#include <avr/interrupt.h> 
 
 #define BUTTON_BIT 5
-#define BUTTON_MASK (1<<BUTTON_BIT)
 
 const struct sensors_sensor button_sensor;
 static int status(int type);

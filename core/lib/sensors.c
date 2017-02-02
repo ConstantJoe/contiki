@@ -113,21 +113,22 @@ PROCESS_THREAD(sensors_process, ev, data)
     sensors[i]->configure(SENSORS_HW_INIT, 0);
   }
   num_sensors = i;
+
   while(1) {
 
     PROCESS_WAIT_EVENT();
 
     do {
-        events = 0;
-        for(i = 0; i < num_sensors; ++i) {
-	         if(sensors_flags[i] & FLAG_CHANGED) {
-	             if(process_post(PROCESS_BROADCAST, sensors_event, (void *)sensors[i]) == PROCESS_ERR_OK) {
-	                 PROCESS_WAIT_EVENT_UNTIL(ev == sensors_event);
-	             }
-	             sensors_flags[i] &= ~FLAG_CHANGED;
-	             events++;
-	         }
-        }
+      events = 0;
+      for(i = 0; i < num_sensors; ++i) {
+  if(sensors_flags[i] & FLAG_CHANGED) {
+    if(process_post(PROCESS_BROADCAST, sensors_event, (void *)sensors[i]) == PROCESS_ERR_OK) {
+      PROCESS_WAIT_EVENT_UNTIL(ev == sensors_event);
+    }
+    sensors_flags[i] &= ~FLAG_CHANGED;
+    events++;
+  }
+      }
     } while(events);
   }
 

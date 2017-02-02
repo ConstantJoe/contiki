@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Swedish Institute of Computer Science
+ * Copyright (c) 2005, Swedish Institute of Computer Science.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,94 +26,48 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * This file is part of the Contiki operating system.
+ * This file is part of the Configurable Sensor Network Application
+ * Architecture for sensor nodes running the Contiki operating system.
  *
+ *
+ *
+ * -----------------------------------------------------------------
+ *
+ * Author  : Adam Dunkels, Joakim Eriksson, Niclas Finne, Simon Barner
+ * Created : 2005-11-03
+ * Updated : $Date: 2006/12/22 17:05:31 $
+ *           $Revision: 1.1 $
  */
 
+#include "contiki-conf.h"
 #include "dev/leds.h"
-#include "sys/clock.h"
-#include "sys/energest.h"
+#include <avr/io.h>
 
-static unsigned char leds;
-/*---------------------------------------------------------------------------*/
-static void
-show_leds(unsigned char new_leds)
-{
-  unsigned char changed;
-  changed = leds ^ new_leds;
-  leds = new_leds;
 
-  if(changed & LEDS_GREEN) {
-    /* Green did change */
-    if(leds & LEDS_GREEN) {
-      ENERGEST_ON(ENERGEST_TYPE_LED_GREEN);
-    } else {
-      ENERGEST_OFF(ENERGEST_TYPE_LED_GREEN);
-    }
-  }
-  if(changed & LEDS_YELLOW) {
-    if(leds & LEDS_YELLOW) {
-      ENERGEST_ON(ENERGEST_TYPE_LED_YELLOW);
-    } else {
-      ENERGEST_OFF(ENERGEST_TYPE_LED_YELLOW);
-    }
-  }
-  if(changed & LEDS_RED) {
-    if(leds & LEDS_RED) {
-      ENERGEST_ON(ENERGEST_TYPE_LED_RED);
-    } else {
-      ENERGEST_OFF(ENERGEST_TYPE_LED_RED);
-    }
-  }
-  leds_arch_set(leds);
-}
 /*---------------------------------------------------------------------------*/
 void
-leds_init(void)
+leds_arch_init(void)
 {
-  leds_arch_init();
-  leds = 0;
-}
-/*---------------------------------------------------------------------------*/
-void
-leds_blink(void)
-{
-  /* Blink all leds that were initially off. */
-  unsigned char blink;
-  blink = ~leds;
-  leds_toggle(blink);
+   DDRE |= LEDS_GREEN;
+   DDRE |= LEDS_YELLOW;
+   DDRE |= LEDS_RED;   
 
-  clock_delay(400);
-
-  leds_toggle(blink);
+   PORTE |= LEDS_GREEN;
+   PORTE |= LEDS_YELLOW;
+   PORTE |= LEDS_RED;
 }
 /*---------------------------------------------------------------------------*/
 unsigned char
-leds_get(void) {
-  return leds_arch_get();
+leds_arch_get(void)
+{
+    return ((PORTE & LEDS_RED) ? 0 : LEDS_RED)
+         | ((PORTE & LEDS_GREEN) ? 0 : LEDS_GREEN)
+         | ((PORTE & LEDS_YELLOW) ? 0 : LEDS_YELLOW);     
 }
 /*---------------------------------------------------------------------------*/
 void
-leds_set(unsigned char ledv)
+leds_arch_set(unsigned char leds)
 {
-  show_leds(ledv);
-}
-/*---------------------------------------------------------------------------*/
-void
-leds_on(unsigned char ledv)
-{
-  show_leds(leds | ledv);
-}
-/*---------------------------------------------------------------------------*/
-void
-leds_off(unsigned char ledv)
-{
-  show_leds(leds & ~ledv);
-}
-/*---------------------------------------------------------------------------*/
-void
-leds_toggle(unsigned char ledv)
-{
-  show_leds(leds ^ ledv);
+   PORTE = ~leds;
 }
 /*---------------------------------------------------------------------------*/

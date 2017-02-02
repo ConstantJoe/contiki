@@ -42,59 +42,22 @@
 
 #include "contiki-conf.h"
 #include "dev/leds.h"
-#include <avr/io.h>
 
 /*---------------------------------------------------------------------------*/
 void
 leds_arch_init(void)
 {
-   DDRE |= (1<<LEDS_GREEN);
-   DDRE |= (1<<LEDS_YELLOW);
-   DDRE |= (1<<LEDS_RED);   
-
-   PORTE |= (1<<LEDS_GREEN);
-   PORTE |= (1<<LEDS_YELLOW);
-   PORTE |= (1<<LEDS_RED);
 }
 /*---------------------------------------------------------------------------*/
 unsigned char
 leds_arch_get(void)
 {
-    return ((PORTE & (1<<LEDS_RED)) ? 0 : LEDS_RED)
-         | ((PORTE & (1<<LEDS_GREEN)) ? 0 : LEDS_GREEN)
-         | ((PORTE & (1<<LEDS_YELLOW)) ? 0 : LEDS_YELLOW);
+    return 0;
 }
 /*---------------------------------------------------------------------------*/
 void
 leds_arch_set(unsigned char leds)
 {
-   PORTE = ~leds;
-   //PORTE &= ~(1<<leds);
-   /*if(leds & LEDS_GREEN) 
-   {
-   	  PORTE &= ~(1<<LEDS_GREEN);
-   }
-   else
-   {
-   	  PORTE |= (1<<LEDS_GREEN);
-   }
 
-   if(leds & LEDS_YELLOW) 
-   {
-   	  PORTE &= ~(1<<LEDS_YELLOW);
-   }
-   else
-   {
-   	  PORTE |= (1<<LEDS_YELLOW);
-   }
-
-   if(leds & LEDS_RED) 
-   {
-   	  PORTE &= ~(1<<LEDS_RED);
-   }
-   else
-   {
-   	  PORTE |= (1<<LEDS_RED);
-   }*/
 }
 /*---------------------------------------------------------------------------*/

@@ -272,73 +272,33 @@ rs232_init (uint8_t port, uint8_t bd, uint8_t ffmt)
 {
 #if NUMPORTS > 0
  if (port == 0) {
-  /*
    D_UBRR0H = (uint8_t)(bd>>8);
    D_UBRR0L = (uint8_t)bd;
 #if RS232_TX_INTERRUPTS
    txwait_0 = 0;
-   D_UCSR0B =  USART_INTERRUPT_RX_COMPLETE_0 | USART_INTERRUPT_TX_COMPLETE_0 | \
-               USART_RECEIVER_ENABLE_0 | USART_TRANSMITTER_ENABLE_0;
+   D_UCSR0B =  USART_INTERRUPT_RX_COMPLETE | USART_INTERRUPT_TX_COMPLETE | \
+               USART_RECEIVER_ENABLE | USART_TRANSMITTER_ENABLE;
 #else
-   D_UCSR0B =  USART_INTERRUPT_RX_COMPLETE_0 | \
-               USART_RECEIVER_ENABLE_0 | USART_TRANSMITTER_ENABLE_0;
+   D_UCSR0B =  USART_INTERRUPT_RX_COMPLETE | \
+               USART_RECEIVER_ENABLE | USART_TRANSMITTER_ENABLE;
 #endif
    D_UCSR0C = USART_UCSRC_SEL | ffmt;
-   input_handler_0 = NULL;*/
-
-  unsigned long baud = 57600;
-  baud = baud/10;
-  baud = ((F_CPU/16)/baud)+5;
-  baud = (baud/10)-1;
-
-  UCSR0B = 0x00;        // disable UART0
-  UCSR0A = 0x0;         // clear status; initialise normal mode
-  UCSR0C = 0x06;        // asynch, no parity, 1 stop, 8 bits
-  UBRR0H = (baud >> 8) & 0x0F;   // baud high
-  UBRR0L = baud & 0xFF; // baud low
-  UCSR0B = (1<<RXEN0) | (1<<TXEN0) | (1<<RXCIE0); // enable rx and tx, and receive interrupt
-  //serial_baud0 = baud;
-  input_handler_0 = NULL;
+   input_handler_0 = NULL;
 
 #if NUMPORTS > 1
  } else if (port == 1) {
-
-   /*D_UBRR1H = (uint8_t)(bd>>8);
+   D_UBRR1H = (uint8_t)(bd>>8);
    D_UBRR1L = (uint8_t)bd;
 #if RS232_TX_INTERRUPTS
    txwait_1 = 0;
-   D_UCSR1B =  USART_INTERRUPT_RX_COMPLETE_1 | USART_INTERRUPT_TX_COMPLETE_1 | \
-               USART_RECEIVER_ENABLE_1 | USART_TRANSMITTER_ENABLE_1;
+   D_UCSR1B =  USART_INTERRUPT_RX_COMPLETE | USART_INTERRUPT_TX_COMPLETE | \
+               USART_RECEIVER_ENABLE | USART_TRANSMITTER_ENABLE;
 #else
-   D_UCSR1B =  USART_INTERRUPT_RX_COMPLETE_1 | \
-               USART_RECEIVER_ENABLE_1 | USART_TRANSMITTER_ENABLE_1;
+   D_UCSR1B =  USART_INTERRUPT_RX_COMPLETE | \
+               USART_RECEIVER_ENABLE | USART_TRANSMITTER_ENABLE;
 #endif
    D_UCSR1C = USART_UCSRC_SEL | ffmt;
-   input_handler_1 = NULL;*/
-
-  /*D_UCSR1B = 0x00;        // disable UART1
-  D_UCSR1A = 0x0;         // clear status; initialise normal mode
-  D_UCSR1C = 0x06;        // asynch, no parity, 1 stop, 8 bits
-
-  D_UBRR1H = (bd >> 8) & 0x0F;   // baud high
-  D_UBRR1L = bd & 0xFF; // baud low
-       
-  D_UCSR1B = (1<<RXEN1) | (1<<TXEN1); // enable rx and tx
-  input_handler_1 = NULL;*/
-
-  //unsigned long F_CPU = 16000000;
-  unsigned long baud = 57600;
-  baud = baud/10;
-  baud = ((F_CPU/16)/baud)+5;
-  baud = (baud/10)-1;
-
-  UCSR1B = 0x00;        // disable UART1
-  UCSR1A = 0x0;         // clear status; initialise normal mode
-  UCSR1C = 0x06;        // asynch, no parity, 1 stop, 8 bits
-  UBRR1H = (baud >> 8) & 0x0F;   // baud high
-  UBRR1L = baud & 0xFF; // baud low
-  UCSR1B = (1<<RXEN1) | (1<<TXEN1) | (1<<RXCIE1); // enable rx and tx, and receive interrupt
-  input_handler_1 = NULL;
+   input_handler_1 = NULL;
 
 #if NUMPORTS > 2
  } else if (port == 2) {
@@ -393,11 +353,8 @@ rs232_send(uint8_t port, unsigned char c)
     D_UDR0 = c;
 #if NUMPORTS > 1
   } else if (port == 1) {
-    //while (!(D_UCSR1A & D_UDRE1M));
-    //D_UDR1 = c;
-    while ( !(UCSR1A & (1<<UDRE1)) );
-    UDR1 = c;
-
+    while (!(D_UCSR1A & D_UDRE1M));
+    D_UDR1 = c;
 #if NUMPORTS > 2
   } else if (port == 2) {
     while (!(D_UCSR2A & D_UDRE2M));
@@ -434,8 +391,7 @@ rs232_print(uint8_t port, char *buf)
   while(*buf) {
 #if ADD_CARRIAGE_RETURN_AFTER_NEWLINE
     if(*buf=='\n') rs232_send(port, '\r');
-    if(*buf=='\r') buf++; else rs232_send(port, *buf++);
-    
+	if(*buf=='\r') buf++; else rs232_send(port, *buf++);
 #else
     rs232_send(port, *buf++);
 #endif
@@ -445,7 +401,7 @@ rs232_print(uint8_t port, char *buf)
 #if RS232_PRINTF_BUFFER_LENGTH
 /*---------------------------------------------------------------------------*/
 void
-rs232_printf(uint8_t port, const char *fmt)
+rs232_printf(uint8_t port, const char *fmt, ...)
 {
   va_list ap;
   static char buf[RS232_PRINTF_BUFFER_LENGTH];
