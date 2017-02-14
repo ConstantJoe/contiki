@@ -1,6 +1,6 @@
 
 
-int sys_sleep(unsigned long length)
+unsigned int sys_sleep(unsigned long length)
 {
 
 	if(length > 100)
@@ -564,292 +564,787 @@ int mac_set_ch_dcycle(unsigned int channelID, unsigned int dutyCycle)
 	}
 }
 
-void mac_set_ch_drrange(int channelID, int minRange, int maxRange)
+unsigned int mac_set_ch_drrange(unsigned int channelID, unsigned int minRange, unsigned int maxRange)
 {
+	if(channelID >= 0 & channelID <= 15)
+	{
+		if(minRange >= 0 & minRange <= 7)
+		{
+			if(maxRange >= 0 & maxRange <= 7)
+			{
+				if(minRange <= maxRange)
+				{
+					char* command == "mac set ch drrange ";
 
+					//TODO: convert int to char*
+
+					PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+
+					// if data is ok, return 1. Else return 0.
+				}
+				else
+				{
+					//err message, return 0
+				}
+			}
+			else
+			{
+				//err message, return 0
+			}
+		}
+		else
+		{
+			//err message, return 0
+		}
+	}
+	else
+	{
+		//err message, return 0
+	}
 }
 
-void mac_set_ch_status(int channelID, int status)
+unsigned int mac_set_ch_status(unsigned int channelID, unsigned int status)
 {
+	if(channelID >= 0 & channelID <= 15)
+	{
+		if(status == 0 | channelID == 1)
+		{
+			char* command == "mac set ch status ";
 
+			//TODO: convert int to char*
+
+			PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+
+			// if data is ok, return 1. Else return 0.
+		}
+		else
+		{
+
+		}
+	}
+	else
+	{
+
+	}
 }
 
 //MAC Get Commands
-void mac_get_devaddr()
+char* mac_get_devaddr()
 {
 	rs232_print(RS232_PORT_1, "mac get devaddr\r\n");
+
+	PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+
+	//return data
 }
 
-void mac_get_deveui()
+char* mac_get_deveui()
 {
 	rs232_print(RS232_PORT_1, "mac get deveui\r\n");
+
+	PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+
+	//return data
 }
 
-void mac_get_appeui()
+char* mac_get_appeui()
 {
 	rs232_print(RS232_PORT_1, "mac get appeui\r\n");
+
+	PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+
+	//return data
 }
 
-void mac_get_dr()
+unsigned int mac_get_dr()
 {
 	rs232_print(RS232_PORT_1, "mac get dr\r\n");
+
+	PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+
+	//return data
 }
 
-void mac_get_band()
+unsigned int mac_get_band()
 {
 	rs232_print(RS232_PORT_1, "mac get band\r\n");
+
+	PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+
+	//return data
 }
 
-void mac_get_pwridx()
+unsigned int mac_get_pwridx()
 {
 	rs232_print(RS232_PORT_1, "mac get pwridx\r\n");
+
+	PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+
+	//return data
 }
 
-void mac_get_adr()
+unsigned int mac_get_adr()
 {
 	rs232_print(RS232_PORT_1, "mac get adr\r\n");
+
+	PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+
+	//convert data to 1 or 0, return it
 }
 
-void mac_get_retx()
+unsigned int mac_get_retx()
 {
 	rs232_print(RS232_PORT_1, "mac get retx\r\n");
+
+	PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+
+	//return data
 }
 
-void mac_get_rxdelay1()
+unsigned int mac_get_rxdelay1()
 {
 	rs232_print(RS232_PORT_1, "mac get rxdelay1\r\n");
+
+	PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+
+	//return data
 }
 
-void mac_get_rxdelay2()
+unsigned int mac_get_rxdelay2()
 {
 	rs232_print(RS232_PORT_1, "mac get rxdelay2\r\n");
+
+	PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+
+	//return data
 }
 
-void mac_get_ar()
+unsigned int mac_get_ar()
 {
 	rs232_print(RS232_PORT_1, "mac get ar\r\n");
+
+	PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+
+	//convert data to 1 or 0, return it
 }
 
-void mac_get_rx2()
+char* mac_get_rx2(unsigned int freqBand)
 {
-	rs232_print(RS232_PORT_1, "mac get rx2\r\n");
+	if(freqBand == 868 | freqBand == 433)
+	{
+		char* command == "mac get rx2 ";
+
+		//TODO: convert int to char*
+
+		PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+
+		// if data is ok, return it. Else return "0".
+	}
+	else
+	{
+		//err message, return "0"
+	}
+	
 }
 
-void mac_get_dcycleps()
+unsigned int mac_get_dcycleps()
 {
 	rs232_print(RS232_PORT_1, "mac get dcycleps\r\n");
+
+	PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+
+	//return data
 }
 
-void mac_get_mrgn()
+unsigned int mac_get_mrgn()
 {
 	rs232_print(RS232_PORT_1, "mac get mrgn\r\n");
+
+	PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+
+	//return data
 }
 
-void mac_get_gwnb()
+unsigned int mac_get_gwnb()
 {
 	rs232_print(RS232_PORT_1, "mac get gwnb\r\n");
+
+	PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+
+	//return data
 }
 
-void mac_get_status()
+char* mac_get_status()
 {
 	rs232_print(RS232_PORT_1, "mac get status\r\n");
+
+	PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+
+	//return data
 }
 
 //MAC Get Channel Commands
-void mac_get_ch_freq(int channelID)
+char* mac_get_ch_freq(unsigned int channelID)
 {
+	if(channelID >= 0 & channelID <= 15)
+	{
+		char* command == "mac get ch freq ";
 
+		//TODO: convert int to char*
+
+		PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+
+		// if data is ok, return it. Else return "0".
+	}
+	else
+	{
+		//err message, return 0	
+	}
 }
 
-void mac_get_ch_dcycle(int channelID)
+unsigned int mac_get_ch_dcycle(unsigned int channelID)
 {
+	if(channelID >= 0 & channelID <= 15)
+	{
+		char* command == "mac get ch dcycle ";
 
+		//TODO: convert int to char*
+
+		PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+
+		// if data is ok, return it. Else return "0".
+	}
+	else
+	{
+		//err message, return 0	
+	}
 }
 
-void mac_get_ch_drrange(int channelID)
+char* mac_get_ch_drrange(unsigned int channelID)
 {
+	if(channelID >= 0 & channelID <= 15)
+	{
+		char* command == "mac get ch drrange ";
 
+		//TODO: convert int to char*
+
+		PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+
+		// if data is ok, return it. Else return "0".
+	}
+	else
+	{
+		//err message, return 0	
+	}
 }
 
-void mac_get_ch_status(int channelID)
+unsigned int mac_get_ch_status(unsigned int channelID)
 {
+	if(channelID >= 0 & channelID <= 15)
+	{
+		char* command == "mac get ch status ";
 
+		//TODO: convert int to char*
+
+		PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+
+		// if data is ok, return it. Else return "0".
+	}
+	else
+	{
+		//err message, return 0	
+	}
 }
 
 //Radio Commands
-void radio_rx(int rxWindowSize)
+void radio_rx(unsigned int rxWindowSize)
 {
+	if(rxWindowSize >= 0 & rxWindowSize <= 65535)
+	{
+		char* command == "radio rx ";
 
+		//TODO: convert int to char*
+
+		PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+
+		// note: complex, multiple responses
+	}
+	else
+	{
+		//err message, return 0
+	}
 }
 
-void radio_tx(int data)
+char* radio_tx(unsigned int data)
 {
+	if(data >= 0 & data <= 255)
+	{
+		char* command == "radio tx ";
 
+		//TODO: convert int to char*
+
+		PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+
+		// note: complex, multiple responses
+	}
+	else
+	{
+		//err message, return 0
+	}
 }
 
-void radio_cw(int state)
+unsigned int radio_cw(unsigned int state)
 {
+	if(state == 0 | state == 1)
+	{
+		char* command == "radio cw ";
 
+		//TODO: convert int to char*
+
+		PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+
+		// return 1 or 0
+	}
+	else
+	{
+		//err message, return 0
+	}
 }
 
 //Radio Set Commands
-void radio_set_bt(char* gfBT)
+unsigned int radio_set_bt(char* gfBT)
 {
+	if(gfBT == "none" | gfBT == "1.0" | gfBT == "0.5" | gfBT == "0.3")
+	{
+		char* command == "radio set bt ";
 
+		
+
+		PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+
+		// return 1 or 0
+	}
+	else
+	{
+		//err message, return 0
+	}
 }
 
 void radio_set_mod(char* mode)
 {
+	if(mode == "lora" | mode == "fsk")
+	{
+		char* command == "radio set mod ";
 
+		
+
+		PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+
+		// return 1 or 0
+	}
+	else
+	{
+		//err message, return 0
+	}
 }
 
-void radio_set_freq(long frequency)
+unsigned int radio_set_freq(unsigned long frequency)
 {
+	if((frequency >= 863000000 & frequency <= 870000000)|(frequency >= 433050000 & frequency <= 434790000))
+	{
+		char* command == "radio set freq ";
 
+		
+
+		PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+
+		// return 1 or 0
+	}
+	else
+	{
+		//err message, return 0
+	}
 }
 
 void radio_set_pwr(int pwrout)
 {
+	if(pwrout >= -3 & pwrout <= 15)
+	{
+		char* command == "radio set pwr ";
 
+		
+
+		PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+
+		// return 1 or 0
+	}
+	else
+	{
+		//err message, return 0
+	}
 }
 
 void radio_set_sf(char* spreadingfactor)
 {
+	if(spreadingfactor == "sf7" | spreadingfactor == "sf8" | spreadingfactor == "sf9" 
+		| spreadingfactor == "sf10" | spreadingfactor == "sf11" | spreadingfactor == "sf12")
+	{
+		char* command == "radio set sf ";
 
+		
+
+		PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+
+		// return 1 or 0
+	}
+	else
+	{
+		//err message, return 0
+	}
 }
 
 void radio_set_afcbw(char* autoFreqBand)
 {
+	if(autoFreqBand == "250" | autoFreqBand == "125" | autoFreqBand == "62.5" | autoFreqBand == "31.3" | 
+		autoFreqBand == "15.6" | autoFreqBand == "7.8" | autoFreqBand == "3.9" | autoFreqBand == "200" | 
+		autoFreqBand == "100" | autoFreqBand == "50" | autoFreqBand == "25" | autoFreqBand == "12.5" | 
+		autoFreqBand == "6.3" | autoFreqBand == "3.1" | autoFreqBand == "166.7" | autoFreqBand == "83.3" | 
+		autoFreqBand == "41.7" | autoFreqBand == "20.8" | autoFreqBand == "10.4" | autoFreqBand == "5.2" | 
+		autoFreqBand == "2.6")
+	{
+		char* command == "radio set afcbw ";
 
+		
+
+		PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+
+		// return 1 or 0
+	}
+	else
+	{
+		//err message, return 0
+	}
 }
 
 void radio_rxbw(char* rxbandwidth)
 {
+	if(rxbandwidth == "250" | rxbandwidth == "125" | rxbandwidth == "62.5" | rxbandwidth == "31.3" | 
+		rxbandwidth == "15.6" | rxbandwidth == "7.8" | rxbandwidth == "3.9" | rxbandwidth == "200" | 
+		rxbandwidth == "100" | rxbandwidth == "50" | rxbandwidth == "25" | rxbandwidth == "12.5" | 
+		rxbandwidth == "6.3" | rxbandwidth == "3.1" | rxbandwidth == "166.7" | rxbandwidth == "83.3" | 
+		rxbandwidth == "41.7" | rxbandwidth == "20.8" | rxbandwidth == "10.4" | rxbandwidth == "5.2" | 
+		rxbandwidth == "2.6")
+	{
+		char* command == "radio set afcbw ";
 
+		
+
+		PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+
+		// return 1 or 0
+	}
+	else
+	{
+		//err message, return 0
+	}	
 }
 
-void radio_set_bitrate(int fskBitRate)
+unsigned int radio_set_bitrate(unsigned int fskBitRate)
 {
+	if(fskBitRate >= 0 & fskBitRate <= 65535)
+	{
+		char* command == "radio set afcbw ";
 
+		
+
+		PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+
+		// return 1 or 0
+	}
+	else
+	{
+		//err message, return 0
+	}
 }
 
-void radio_set_fdev(int freqdev)
+unsigned int radio_set_fdev(unsigned int freqdev)
 {
+	if(freqdev >= 0 & freqdev <= 65535)
+	{
+		char* command == "radio set fdev ";
 
+		
+
+		PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+
+		// return 1 or 0
+	}
+	else
+	{
+		//err message, return 0
+	}
 }
 
-void radio_set_prlen(int preamble)
+unsigned int radio_set_prlen(unsigned int preamble)
 {
+	if(preamble >= 0 & preamble <= 65535)
+	{
+		char* command == "radio set afcbw ";
 
+		
+
+		PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+
+		// return 1 or 0
+	}
+	else
+	{
+		//err message, return 0
+	}
 }
 
-void radio_set_crc(int crcHeader)
+unsigned int radio_set_crc(unsigned int crcHeader)
 {
+	if(crcHeader == 0 | crcHeader == 1)
+	{
+		char* command == "radio set crc ";
 
+		
+
+		PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+
+		// return 1 or 0
+	}
+	else
+	{
+		//err message, return 0
+	}
 }
 
-void radio_set_iqi(int iqInvert)
+unsigned int radio_set_iqi(unsigned int iqInvert)
 {
+	if(iqInvert == 0 | iqInvert == 1)
+	{
+		char* command == "radio set iqi ";
 
+		
+
+		PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+
+		// return 1 or 0
+	}
+	else
+	{
+		//err message, return 0
+	}
 }
 
-void radio_set_cr(char* codingRate)
+unsigned int radio_set_cr(char* codingRate)
 {
+	if(codingRate == "4/5" | codingRate == "4/6" | codingRate == "4/7" | codingRate == "4/8")
+	{
+		char* command == "radio set cr ";
 
+		
+
+		PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+
+		// return 1 or 0
+	}
+	else
+	{
+		//err message, return 0
+	}
 }
 
-void radio_set_wdt(long watchDog)
+unsigned int radio_set_wdt(unsigned long watchDog)
 {
+	if(watchDog >= 0 & watchDog <= 4294967295)
+	{
+		char* command == "radio set wdt ";
 
+		
+
+		PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+
+		// return 1 or 0
+	}
+	else
+	{
+		//err message, return 0
+	}
 }
 
-void radio_set_sync(int syncWord)
+unsigned int radio_set_sync(char* syncWord)
 {
+	//TODO: test syncWord is in hex format
 
+	char* command == "radio set cr ";
+
+		
+
+	PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+
+	// return 1 or 0
 }
 
-void radio_set_bw(int bandWidth)
+unsigned int radio_set_bw(unsigned int bandWidth)
 {
+	if(bandWidth == 125 | bandWidth == 250 | bandWidth == 500)
+	{
+		char* command == "radio set bw ";
 
+		PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+
+		// return 1 or 0
+	}
+	else
+	{
+		//err message, return 0
+	}
 }
 
 //Radio Get Commands
-void radio_get_bt()
+char* radio_get_bt()
 {
 	rs232_print(RS232_PORT_1, "radio get bt\r\n");
+
+	PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+
+	// return data
 }
 
-void radio_get_mod()
+char* radio_get_mod()
 {
 	rs232_print(RS232_PORT_1, "radio get mod\r\n");
+
+	PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+
+	// return data
 }
 
-void radio_get_freq()
+unsigned long radio_get_freq()
 {
 	rs232_print(RS232_PORT_1, "radio get freq\r\n");
+
+	PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+
+	// convert data, return it
 }
 
-void radio_get_pwr()
+int radio_get_pwr()
 {
 	rs232_print(RS232_PORT_1, "radio get pwr\r\n");
+
+	PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+
+	// return data
 }
 
-void radio_get_sf()
+char* radio_get_sf()
 {
 	rs232_print(RS232_PORT_1, "radio get sf\r\n");
+
+	PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+
+	// return data
 }
 
-void radio_get_afcbw()
+char* radio_get_afcbw()
 {
 	rs232_print(RS232_PORT_1, "radio get afcbw\r\n");
+
+	PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+
+	// return data
 }
 
-void radio_get_rxbw()
+char* radio_get_rxbw()
 {
 	rs232_print(RS232_PORT_1, "radio get rxbw\r\n");
+
+	PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+
+	// return data
 }
 
-void radio_get_bitrate()
+unsigned int radio_get_bitrate()
 {
 	rs232_print(RS232_PORT_1, "radio get bitrate\r\n");
+
+	PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+
+	// return data
 }
 
-void radio_get_fdev()
+unsigned int radio_get_fdev()
 {
 	rs232_print(RS232_PORT_1, "radio get fdev\r\n");
+
+	PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+
+	// return data
 }
 
-void radio_get_prlen()
+unsigned int radio_get_prlen()
 {
 	rs232_print(RS232_PORT_1, "radio get prlen\r\n");
+
+	PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+
+	// return data
 }
 
-void radio_get_crc()
+unsigned int radio_get_crc()
 {
 	rs232_print(RS232_PORT_1, "radio get crc\r\n");
+
+	PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+
+	// return data
 }
 
-void radio_get_iqi()
+unsigned int radio_get_iqi()
 {
 	rs232_print(RS232_PORT_1, "radio get iqi\r\n");
+
+	PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+
+	// return data
 }
 
-void radio_get_cr()
+char* radio_get_cr()
 {
 	rs232_print(RS232_PORT_1, "radio get cr\r\n");
+
+	PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+
+	// return data
 }
 
-void radio_get_wdt()
+unsigned long radio_get_wdt()
 {
 	rs232_print(RS232_PORT_1, "radio get wdt\r\n");
+
+	PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+
+	// return data
 }
 
-void radio_get_bw()
+unsigned int radio_get_bw()
 {
 	rs232_print(RS232_PORT_1, "radio get bw\r\n");
+
+	PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+
+	// return data
 }
 
-void radio_get_snr()
+int radio_get_snr()
 {
 	rs232_print(RS232_PORT_1, "radio get snr\r\n");
+
+	PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+
+	// return data
 }
