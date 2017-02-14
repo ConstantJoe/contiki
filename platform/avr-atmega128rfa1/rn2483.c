@@ -361,54 +361,207 @@ void mac_set_pwridx(int pwrIndex)
 	}
 }
 
-void mac_set_dr(int dataRate)
+int mac_set_dr(unsigned int dataRate)
 {
-	
+	if(dataRate >= 0 && dataRate <= 7)
+	{
+		char* command == "mac set dr ";
+
+		//TODO: convert int to char*
+
+		PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+
+		// if data is ok, return 1. Else return 0.			
+	}
+	else
+	{
+		//err message, return 0.
+	}
 }
 
-void mac_set_adr(char* state)
+int mac_set_adr(int state)
 {
+	if(state == 1 | state == 0)
+	{
+		char* command == "mac set adr ";
 
+		//TODO: convert int to char*
+
+		PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+
+		// if data is ok, return 1. Else return 0.
+	}
+	else
+	{
+		//err message, return 0
+	}
 }
 
-void mac_set_bat(int level)
+int mac_set_bat(unsigned int level)
 {
+	if(level >= 0 && level <= 255)
+	{
+		char* command == "mac set bat ";
 
+		//TODO: convert int to char*
+
+		PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+
+		// if data is ok, return 1. Else return 0.
+	}
+	else
+	{
+		//err message, return 0
+	}
 }
 
-void mac_set_retx(int reTxNb)
+int mac_set_retx(unsigned int reTxNb)
 {
+	if(reTxNb >= 0 && reTxNb <= 255)
+	{
+		char* command == "mac set retx ";
 
+		//TODO: convert int to char*
+
+		PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+
+		// if data is ok, return 1. Else return 0.
+	}
+	else
+	{
+		//err message, return 0
+	}
 }
 
-void mac_set_linkchk(int linkCheck)
+int mac_set_linkchk(unsigned int linkCheck)
 {
+	if(linkCheck >= 0 && linkCheck <= 65535)
+	{
+		char* command == "mac set linkchk ";
 
+		//TODO: convert int to char*
+
+		PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+
+		// if data is ok, return 1. Else return 0.
+	}
+	else
+	{
+		//err message, return 0
+	}
 }
 
-void mac_set_rxdelay1(int rxDelay)
+int mac_set_rxdelay1(unsigned int rxDelay)
 {
+	if(rxDelay >= 0 & rxDelay <= 65535)
+	{
+		char* command == "mac set rxdelay1 ";
 
+		//TODO: convert int to char*
+
+		PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+
+		// if data is ok, return 1. Else return 0.
+	}
+	else
+	{
+		//err message, return 0
+	}
 }
 
-void mac_set_ar(int state)
+int mac_set_ar(unsigned int state)
 {
+	if(state == 0 | state == 1)
+	{
+		char* command == "mac set ar ";
 
+		//TODO: convert int to char*
+
+		PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+
+		// if data is ok, return 1. Else return 0.
+	}
+	else
+	{
+		//err message, return 0
+	}
 }
 
-void mac_set_rx2(int dataRate, long frequency)
+int mac_set_rx2(unsigned int dataRate, unsigned long frequency)
 {
+	if(dataRate >= 0 & dataRate <= 7)
+	{
+		if((frequency >= 863000000 & frequency <= 870000000)|(frequency >= 433050000 & frequency <= 434790000))
+		{
+			char* command == "mac set rx2 ";
 
+			//TODO: convert int to char*
+
+			PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+
+			// if data is ok, return 1. Else return 0.
+		}
+		else
+		{
+			//err message, return 0
+		}
+	}	
+	else
+	{
+		//err message, return 0
+	}
 }
 
-void mac_set_ch_freq(int channelID, long frequency)
-{
+//MAC Set Channel Commands
 
+int mac_set_ch_freq(unsigned int channelID, unsigned long frequency)
+{
+	if(channelID >= 3 & channelID <= 15)
+	{
+		if((frequency >= 863000000 & frequency <= 870000000)|(frequency >= 433050000 & frequency <= 434790000))
+		{
+			char* command == "mac set ch freq ";
+
+			//TODO: convert int to char*
+
+			PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+
+			// if data is ok, return 1. Else return 0.
+		}
+		else
+		{
+			//err message, return 0
+		}
+	}
+	else
+	{
+		//err message, return 0
+	}
 }
 
-void mac_set_ch_dcycle(int channelID, int dutyCycle)
+int mac_set_ch_dcycle(unsigned int channelID, unsigned int dutyCycle)
 {
+	if(channelID >= 0 & channelID <= 15)
+	{
+		if(dutyCycle >= 0 & dutyCycle <= 65535)
+		{
+			char* command == "mac set ch dcycle ";
 
+			//TODO: convert int to char*
+
+			PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+
+			// if data is ok, return 1. Else return 0.
+		}
+		else
+		{
+			//err message, return 0
+		}
+	}
+	else
+	{
+		//err message, return 0
+	}
 }
 
 void mac_set_ch_drrange(int channelID, int minRange, int maxRange)
