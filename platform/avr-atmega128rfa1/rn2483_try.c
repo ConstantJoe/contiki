@@ -3,59 +3,111 @@
 unsigned int sys_sleep(unsigned long length)
 {
 
-	if(length > 100)
+  if(length > 100)
+  {
+    char* command = "sys sleep ";
+
+    //convert ulong to string
+    const int n = snprintf(NULL, 0, "%lu", length);
+    assert(n > 0);
+    char len_str[n+1];
+    int c = snprintf(len_str, n+1, "%lu", length);
+    assert(len_str[n] == '\0');
+    assert(c == n);
+
+    char *result = malloc(strlen(command)+strlen(len_str)+3);
+    strcpy(result, command);
+    strcat(result, len_str);
+    strcat(result, "\r\n");
+
+    rs232_print(RS232_PORT_1, result);
+
+    return 1;
+  }
+  else
+  {
+    rs232_print(RS232_PORT_0, "ERROR: sleep length not long enough.");
+    return 0;
+  }
+}
+
+unsigned int sys_sleep_response(char* data)
+{
+	if(strcmp(data,"ok"))
 	{
-		char* command = "sys sleep ";
-
-		//TODO: generate len_str
-		//see http://stackoverflow.com/questions/2709713/how-to-convert-unsigned-long-to-string
-
-		char *result = malloc(strlen(command)+strlen(len_str)+1);
-		strcpy(result, command);
-		strcat(result, len_str);
-		rs232_print(RS232_PORT_1, result);
-
-		PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1)
-
-
-		//TODO: if "ok", return 1. Else return 0.
+		return 1;
 	}
 	else
 	{
-
-		//TODO: Print err message, and return 0.
+		return 0;
 	}
 }
 
-char* sys_reset()
+unsigned int sys_reset()
 {
 	rs232_print(RS232_PORT_1, "sys reset\r\n");
 
-	PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1)
-
-	return (char *)data; //use of ev and data not as simple as this. But this is basically the idea.
+	return 1;
 }
 
-void sys_eraseFW()
+char* sys_reset_response(char* data)
+{
+	// data is system data, in the format:
+	// RN2483 X.Y.Z MMM DD YYYY HH:MM:SS
+	// Date and time refer to the release of the firmware
+	//TODO: put this into a nicer format
+	return data;
+}
+
+/*NOTE: this method gives no response.*/
+unsigned int sys_eraseFW()
 {
 	rs232_print(RS232_PORT_1, "sys eraseFW\r\n");
+
+	return 1;
 }
 
-void sys_factoryRESET()
+
+unsigned int sys_factoryRESET()
 {
 	rs232_print(RS232_PORT_1, "sys factoryRESET\r\n");
 
-	PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1)
-
-	return (char *)data; //use of ev and data not as simple as this. But this is basically the idea.
+	return 1;
 }
+
+char* sys_factoryRESET_response(char* data)
+{
+	// data is system data, in the format:
+	// RN2483 X.Y.Z MMM DD YYYY HH:MM:SS
+	// Date and time refer to the release of the firmware
+	//TODO: put this into a nicer format
+	return data;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 //System Set Commands
 
 /*Modify EEPROM at address to data. Both address and data must be inputted as hex values
 	Can modify addresses from 300 to 3FF.
 */
-int sys_set_nvm(unsigned int address, unsigned char data)
+unsigned int sys_set_nvm(unsigned int address, unsigned int data)
 {
 	if(address >= 0x300 && address <= 0x3FF)
 	{
@@ -63,23 +115,48 @@ int sys_set_nvm(unsigned int address, unsigned char data)
 		{
 			char* command = "sys set nvm ";
 
-			//TODO: address to char* (hex version)
+			//address to char* (hex version)
+			char* add_str;
+			sprintf(add_str, "%x", address);
 
-			//TODO: data to char* (hex version)
+			//data to char* (hex version)
+			char* data_str;
+			sprintf(data_str, "%x", data);
 
-			PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1)
+			//copy all into one array
+			char *result = malloc(strlen(command)+strlen(add_str)+strlen(data_str)+4);
+    		strcpy(result, command);
+    		strcat(result, add_str);
+    		strcat(result, " ");
+    		strcat(result, data_str);
+    		strcat(result, "\r\n");
 
-			//if "ok", return 1.
-			//else return 0
+    		rs232_print(RS232_PORT_1, result);
+
+    		return 1;
 		}
 		else
 		{
-			//print err message, return 0.
+			rs232_print(RS232_PORT_0, "ERROR: sys_set_nvm: data not between 0x00 and 0xFF\r\n");
+			return 0;
 		}
 	}
 	else
 	{
-		//print err message, return 0.
+		rs232_print(RS232_PORT_0, "ERROR: sys_set_nvm: address not between 0x300 and 0x3FF\r\n");
+		return 0;
+	}
+}
+
+unsigned int sys_set_nvm_response(char* data)
+{
+	if(strcmp(data,"ok"))
+	{
+		return 1;
+	}
+	else
+	{
+		return 0;
 	}
 }
 
@@ -87,110 +164,240 @@ int sys_set_nvm(unsigned int address, unsigned char data)
 Pinname can be GPIO0-GPIO14, UART_CTS, UART_RTS, TEST0, TEST1
 Pinstate can be 0 or 1.
 */
-int sys_set_pindig(char* pinname, int pinstate)
+unsigned int sys_set_pindig(char* pinname, unsigned int pinstate)
 {
-	if(pinname == "GPIO0" | pinname == "GPIO1" | pinname == "GPIO2" | pinname == "GPIO3" | pinname == "GPIO4" 
-		| pinname == "GPIO5" | pinname == "GPIO6" | pinname == "GPIO7" | pinname == "GPIO8" | pinname == "GPIO9"
-		| pinname == "GPIO10" | pinname == "GPIO11" | pinname == "GPIO12" | pinname == "GPIO13" | pinname == "GPIO14"
-		| pinname == "UART_CTS" | pinname == "UART_RTS" | pinname == "TEST0" | pinname == "TEST1")
+	if( strcmp(pinname,"GPIO0")    | strcmp(pinname,"GPIO1")    | strcmp(pinname,"GPIO2")  | strcmp(pinname,"GPIO3")  | strcmp(pinname,"GPIO4") | 
+		strcmp(pinname,"GPIO5")    | strcmp(pinname,"GPIO6")    | strcmp(pinname,"GPIO7")  | strcmp(pinname,"GPIO8")  | strcmp(pinname,"GPIO9") | 
+		strcmp(pinname,"GPIO10")   | strcmp(pinname,"GPIO11")   | strcmp(pinname,"GPIO12") | strcmp(pinname,"GPIO13") | strcmp(pinname,"GPIO14") | 
+		strcmp(pinname,"UART_CTS") | strcmp(pinname,"UART_RTS") | strcmp(pinname,"TEST0")  | strcmp(pinname,"TEST1"))
 	{
 		if(pinstate == 0 | pinstate == 1)
 		{
 			char* command = "sys set pindig ";
 
-			//TODO: pinstate to char*
+			//pinstate to char*
+			char* pinstate_str;
+			sprintf(pinstate_str, "%u", address);
 
-			PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+			//copy all into one array
+			char *result = malloc(strlen(command)+strlen(pinname)+strlen(pinstate_str)+4);
+    		strcpy(result, command);
+    		strcat(result, pinname);
+    		strcat(result, " ");
+    		strcat(result, pinstate_str);
+    		strcat(result, "\r\n");
 
-			//if "ok", return 1.
-			//else return 0
+    		rs232_print(RS232_PORT_1, result);
+
+    		return 1;
 		}
 		else
 		{
-			//print err message, return 0.
+			rs232_print(RS232_PORT_0, "ERROR: sys_set_pindig: pinstate is not 0 or 1\r\n");
+			return 0;
 		}
 	}
 	else
 	{
-		//print err message, return 0.
+		rs232_print(RS232_PORT_0, "ERROR: sys_set_pindig: pinname not correct\r\n");
+		return 0;
 	}
 }
 
+unsigned int sys_set_pindig_response(char* data)
+{
+	if(strcmp(data,"ok"))
+	{
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 //System Get Commands
 
-char* sys_get_ver()
+unsigned int sys_get_ver()
 {
 	rs232_print(RS232_PORT_1, "sys get ver\r\n");
 
-	PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1)
-
-	return (char *)data; 
+	return 1;
 }
 
-unsigned char sys_get_nvm(int address)
+char* sys_get_ver_response(char* data)
+{
+	// data is system data, in the format:
+	// RN2483 X.Y.Z MMM DD YYYY HH:MM:SS
+	// Date and time refer to the release of the firmware
+	//TODO: put this into a nicer format
+	return data;
+}
+
+
+unsigned int sys_get_nvm(unsigned int address)
 {
 	if(address >= 0x300 && address <= 0x3FF)
 	{
 		char* command = "sys get nvm ";
 
-		//TODO: address to char*
+		char* add_str;
+		sprintf(add_str, "%x", address);
+		//address to char*
 
-		PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+		//copy all into one array
+		char *result = malloc(strlen(command)+strlen(add_str)+3);
+    	strcpy(result, command);
+    	strcat(result, add_str);
+    	strcat(result, "\r\n");
 
-		//TODO: data to unsigned int.
+    	rs232_print(RS232_PORT_1, result);
 
+    	return 1;
 	}
 	else
 	{
-		//print err message, return 0.
+		rs232_print(RS232_PORT_0, "ERROR: sys_get_nvm: address not between 0x300 and 0x3FF.\r\n");
+		return 0;
 	}
 }
+
+unsigned int sys_get_nvm_response(char* data)
+{
+	if(strcmp(data,"invalid_param"))
+	{
+		return 0;
+	}
+	else
+	{
+		return (unsigned int)strtol(data, NULL, 16);
+	}
+}
+
 
 unsigned int sys_get_vdd()
 {
 	rs232_print(RS232_PORT_1, "sys get vdd\r\n");
 
-	PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
-
-	//TODO: data to unsigned int
+	return 1;
 }
 
-void sys_get_hweui()
+unsigned int sys_get_vdd_response(char* data)
+{
+	return (unsigned int *)strtoull(data, NULL, 0);
+}
+
+
+
+
+
+unsigned int sys_get_hweui()
 {
 	rs232_print(RS232_PORT_1, "sys get hweui\r\n");
 
-	PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
-
-	return (char *)data; 
+	return 1;
 }
+
+unsigned int sys_get_hweui_response(char* data)
+{
+	return (unsigned int)strtol(data, NULL, 16);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 //MAC Commands
 
 /*band can be 868 or 433*/
-int mac_reset(int band)
+unsigned int mac_reset(unsigned int band)
 {
 	if(band == 433 | band == 868)
 	{
 		char* command = "mac reset ";
 		
-		//TODO: int to char*
+		//int to char*
+		char* band_str;
+		sprintf(band_str, "%u", band);
 
-		PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+		//copy all into one array
+		char *result = malloc(strlen(command)+strlen(band_str)+3);
+    	strcpy(result, command);
+    	strcat(result, band_str);
+    	strcat(result, "\r\n");
 
-		//TODO: if "ok", return 1. Else return 0.
+    	rs232_print(RS232_PORT_1, result);
+
+    	return 1;
 	}
 	else
 	{
-		//print err message, return 0.
+		rs232_print(RS232_PORT_0, "ERROR: mac_reset: band chosen is not 433 or 868.\r\n");
+		return 0;
 	}
 }
 
+unsigned int mac_reset_response(char* data)
+{
+	if(strcmp(data,"ok"))
+	{
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}
+}
+
+
+
+
 void mac_tx(char* type, unsigned int portno, char* data)
 {
-	if(type == "cnf" | "uncnf")
+	if(strcmp(type,"cnf") | strcmp(type,"uncnf"))
 	{
 		if(portno >= 1 && <= 223)
 		{
+			//TODO: check if data is in hex form.
+
 			char* command == "mac tx ";
 
 			//TODO: unsigned int to char
@@ -228,57 +435,134 @@ void mac_join(char* mode)
 	}
 }
 
-int mac_save()
+unsigned int mac_save()
 {
 	rs232_print(RS232_PORT_1, "mac save\r\n");
 
-	PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
-
-	// if data is ok, return 1. Else return 0.
+	return 1;
 }
 
-void mac_forceENABLE()
+unsigned int mac_save_response(char* data)
+{
+	if(strcmp(data,"ok"))
+	{
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}
+}
+
+
+
+unsigned int mac_forceENABLE()
 {
 	rs232_print(RS232_PORT_1, "mac forceENABLE\r\n");
 
-	PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
-
-	// if data is ok, return 1. Else return 0.
+	return 1;
 }
+
+unsigned int mac_forceENABLE_response(char* data)
+{
+	if(strcmp(data,"ok"))
+	{
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}	
+}
+
+
+
+
 
 unsigned int mac_pause()
 {
 	rs232_print(RS232_PORT_1, "mac pause\r\n");
 
-	PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
-
-	// convert data to unsigned int, return it.
+	return 1;
 }
 
-int mac_resume()
+unsigned long mac_pause_response(char* data)
+{
+	return (unsigned long)strtoul(data, NULL, 0);
+}
+
+unsigned int mac_resume()
 {
 	rs232_print(RS232_PORT_1, "mac resume\r\n");
 
-	PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
-
-	// if data is ok, return 1. Else return 0.
+	return 1;
 }
+
+unsigned int mac_resume_response()
+{
+	if(strcmp(data,"ok"))
+	{
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 //MAC Set Commands
 
-int mac_set_devaddr(unsigned int address)
+unsigned int mac_set_devaddr(unsigned long address)
 {
 	char* command == "mac set devaddr ";
-	//TODO: convert unsigned int to char*
 
-	PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+	//address to char*
+	char* add_str;
+	sprintf(add_str, "%x", address);
+		
+	//copy all into one array
+	char *result = malloc(strlen(command)+strlen(add_str)+3);
+    strcpy(result, command);
+    strcat(result, add_str);
+    strcat(result, "\r\n");
 
-	// if data is ok, return 1. Else return 0.
+   	rs232_print(RS232_PORT_1, result);
+
+    return 1;
 }
 
-int mac_set_deveui(char* deveui)
+unsigned int mac_set_devaddr_response(char* data)
 {
-	//TODO: check if string is in hex format, correct length
+	if(strcmp(data,"ok"))
+	{
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}
+}
+
+
+unsigned int mac_set_deveui(char* deveui)
+{
+	//TODO: complex, check if string is in hex format, correct length
 
 	char* command == "mac set deveui ";
 
@@ -289,9 +573,22 @@ int mac_set_deveui(char* deveui)
 	// if data is ok, return 1. Else return 0.
 }
 
-int mac_set_appeui(char* appeui)
+unsigned int mac_set_deveui_response(char* data)
 {
-	//TODO: check if string is in hex format, correct length
+	if(strcmp(data,"ok"))
+	{
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}	
+}
+
+
+unsigned int mac_set_appeui(char* appeui)
+{
+	//TODO: complex, check if string is in hex format, correct length
 
 	char* command == "mac set appeui ";
 
@@ -302,9 +599,23 @@ int mac_set_appeui(char* appeui)
 	// if data is ok, return 1. Else return 0.
 }
 
-int mac_set_nwkskey(char* nwksesskey)
+unsigned int mac_set_appeui_response(char* data)
 {
-	//TODO: check if string is in hex format, correct length
+	if(strcmp(data,"ok"))
+	{
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}
+}
+
+
+
+unsigned int mac_set_nwkskey(char* nwksesskey)
+{
+	//TODO: complex, check if string is in hex format, correct length
 
 	char* command == "mac set nwkskey ";
 
@@ -315,9 +626,22 @@ int mac_set_nwkskey(char* nwksesskey)
 	// if data is ok, return 1. Else return 0.
 }
 
-int mac_set_appskey(char* appSesskey)
+unsigned int mac_set_nwkskey(char* data)
 {
-	//TODO: check if string is in hex format, correct length
+	if(strcmp(data,"ok"))
+	{
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}	
+}
+
+
+unsigned int mac_set_appskey(char* appSesskey)
+{
+	//TODO: complex, check if string is in hex format, correct length
 
 	char* command == "mac set appskey ";
 
@@ -328,9 +652,23 @@ int mac_set_appskey(char* appSesskey)
 	// if data is ok, return 1. Else return 0.
 }
 
-int mac_set_appkey(char* appkey)
+unsigned int mac_set_appskey(char* data)
 {
-	//TODO: check if string is in hex format, correct length
+	if(strcmp(data,"ok"))
+	{
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}	
+}
+
+
+
+unsigned int mac_set_appkey(char* appkey)
+{
+	//TODO: complex, check if string is in hex format, correct length
 
 	char* command == "mac set appkey ";
 
@@ -341,153 +679,356 @@ int mac_set_appkey(char* appkey)
 	// if data is ok, return 1. Else return 0.
 }
 
-void mac_set_pwridx(int pwrIndex)
+unsigned int mac_set_appkey_response(char* appkey)
 {
-	//TODO: check if string is in hex format, correct length
-
-	if(pwrIndex >=0 && pwrIndex <= 5)
+	if(strcmp(data,"ok"))
 	{
-		char* command == "mac set pwridx ";
-
-		//TODO: convert int to char*
-
-		PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
-
-		// if data is ok, return 1. Else return 0.
+		return 1;
 	}
 	else
 	{
+		return 0;
+	}	
+}
 
+unsigned int mac_set_pwridx(unsigned int pwrIndex)
+{
+	if(pwrIndex >= 0 && pwrIndex <= 5)
+	{
+		char* command == "mac set pwridx ";
+
+		//int to char*
+		char* pwrIndex_str;
+		sprintf(pwrIndex_str, "%u", pwrIndex);
+
+		//copy all into one array
+		char *result = malloc(strlen(command)+strlen(pwrIndex_str)+3);
+    	strcpy(result, command);
+    	strcat(result, pwrIndex_str);
+    	strcat(result, "\r\n");
+
+    	rs232_print(RS232_PORT_1, result);
+
+    	return 1;
+	}
+	else
+	{
+		rs232_print(RS232_PORT_0, "ERROR: mac_set_pwridx: pwrIndex not between 0 and 5.\r\n");		
+		return 0;
 	}
 }
 
-int mac_set_dr(unsigned int dataRate)
+unsigned int mac_set_pwridx_response(char* data)
+{
+	if(strcmp(data,"ok"))
+	{
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}		
+}
+
+
+unsigned int mac_set_dr(unsigned int dataRate)
 {
 	if(dataRate >= 0 && dataRate <= 7)
 	{
 		char* command == "mac set dr ";
 
-		//TODO: convert int to char*
+		//int to char*
+		char* dataRate_str;
+		sprintf(dataRate_str, "%u", dataRate);
 
-		PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+		//copy all into one array
+		char *result = malloc(strlen(command)+strlen(dataRate_str)+3);
+    	strcpy(result, command);
+    	strcat(result, dataRate_str);
+    	strcat(result, "\r\n");
 
-		// if data is ok, return 1. Else return 0.			
+    	rs232_print(RS232_PORT_1, result);
+
+    	return 1;
 	}
 	else
 	{
-		//err message, return 0.
+		rs232_print(RS232_PORT_0, "ERROR: mac_set_dr: dataRate not between 0 and 7.\r\n");		
+		return 0;		
 	}
 }
 
-int mac_set_adr(int state)
+unsigned int mac_set_dr_response(char* data)
+{
+	if(strcmp(data,"ok"))
+	{
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}	
+}
+
+
+
+unsigned int mac_set_adr(unsigned int state)
 {
 	if(state == 1 | state == 0)
 	{
 		char* command == "mac set adr ";
 
-		//TODO: convert int to char*
+		//int to char*
+		char* state_str;
+		if(state)
+		{
+			state_str = "on";
+		}
+		else
+		{
+			state_str = "off";
+		}
 
-		PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+		//copy all into one array
+		char *result = malloc(strlen(command)+strlen(state_str)+3);
+    	strcpy(result, command);
+    	strcat(result, state_str);
+    	strcat(result, "\r\n");
 
-		// if data is ok, return 1. Else return 0.
+    	rs232_print(RS232_PORT_1, result);
+
+    	return 1;
 	}
 	else
 	{
-		//err message, return 0
+		rs232_print(RS232_PORT_0, "ERROR: mac_set_dr: state is not 0 or 1.\r\n");		
+		return 0;
 	}
 }
 
-int mac_set_bat(unsigned int level)
+unsigned int mac_set_adr_response(char* data)
+{
+	if(strcmp(data,"ok"))
+	{
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}		
+}
+
+
+
+unsigned int mac_set_bat(unsigned int level)
 {
 	if(level >= 0 && level <= 255)
 	{
 		char* command == "mac set bat ";
 
-		//TODO: convert int to char*
+		//int to char*
+		char* level_str;
+		sprintf(level_str, "%u", level);
 
-		PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+		//copy all into one array
+		char *result = malloc(strlen(command)+strlen(level_str)+3);
+    	strcpy(result, command);
+    	strcat(result, level_str);
+    	strcat(result, "\r\n");
 
-		// if data is ok, return 1. Else return 0.
+    	rs232_print(RS232_PORT_1, result);
+
+    	return 1;
 	}
 	else
 	{
-		//err message, return 0
+		rs232_print(RS232_PORT_0, "ERROR: mac_set_bat: state is not between 0 and 255.\r\n");		
+		return 0;
 	}
 }
 
-int mac_set_retx(unsigned int reTxNb)
+unsigned int mac_set_bat_response(char* data)
+{
+	if(strcmp(data,"ok"))
+	{
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}		
+}
+
+
+
+
+
+unsigned int mac_set_retx(unsigned int reTxNb)
 {
 	if(reTxNb >= 0 && reTxNb <= 255)
 	{
 		char* command == "mac set retx ";
 
-		//TODO: convert int to char*
+		//int to char*
+		char* reTxNb_str;
+		sprintf(reTxNb_str, "%u", reTxNb);
 
-		PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+		//copy all into one array
+		char *result = malloc(strlen(command)+strlen(reTxNb_str)+3);
+    	strcpy(result, command);
+    	strcat(result, reTxNb_str);
+    	strcat(result, "\r\n");
 
-		// if data is ok, return 1. Else return 0.
+    	rs232_print(RS232_PORT_1, result);
+
+    	return 1;
 	}
 	else
 	{
-		//err message, return 0
+		rs232_print(RS232_PORT_0, "ERROR: mac_set_retx: reTxNb is not between 0 and 255.\r\n");		
+		return 0;
 	}
 }
 
-int mac_set_linkchk(unsigned int linkCheck)
+unsigned int mac_set_retx_response(char* data)
+{
+	if(strcmp(data,"ok"))
+	{
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}	
+}
+
+unsigned int mac_set_linkchk(unsigned int linkCheck)
 {
 	if(linkCheck >= 0 && linkCheck <= 65535)
 	{
 		char* command == "mac set linkchk ";
 
-		//TODO: convert int to char*
+		//int to char*
+		char* linkCheck_str;
+		sprintf(linkCheck_str, "%u", linkCheck);
 
-		PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+		//copy all into one array
+		char *result = malloc(strlen(command)+strlen(linkCheck_str)+3);
+    	strcpy(result, command);
+    	strcat(result, linkCheck_str);
+    	strcat(result, "\r\n");
 
-		// if data is ok, return 1. Else return 0.
+    	rs232_print(RS232_PORT_1, result);
+
+    	return 1;
 	}
 	else
 	{
-		//err message, return 0
+		rs232_print(RS232_PORT_0, "ERROR: mac_set_linkchk: linkCheck is not between 0 and 65535.\r\n");		
+		return 0;
 	}
 }
 
-int mac_set_rxdelay1(unsigned int rxDelay)
+unsigned int mac_set_linkchk_response(char* data)
+{
+	if(strcmp(data,"ok"))
+	{
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}		
+}
+
+unsigned int mac_set_rxdelay1(unsigned int rxDelay)
 {
 	if(rxDelay >= 0 & rxDelay <= 65535)
 	{
 		char* command == "mac set rxdelay1 ";
 
-		//TODO: convert int to char*
+		//int to char*
+		char* rxDelay_str;
+		sprintf(rxDelay_str, "%u", rxDelay);
 
-		PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+		//copy all into one array
+		char *result = malloc(strlen(command)+strlen(rxDelay_str)+3);
+    	strcpy(result, command);
+    	strcat(result, rxDelay_str);
+    	strcat(result, "\r\n");
 
-		// if data is ok, return 1. Else return 0.
+    	rs232_print(RS232_PORT_1, result);
+
+    	return 1;
 	}
 	else
 	{
-		//err message, return 0
+		rs232_print(RS232_PORT_0, "ERROR: mac_set_rxdelay1: rxDelay is not between 0 and 65535.\r\n");		
+		return 0;
 	}
 }
 
-int mac_set_ar(unsigned int state)
+unsigned int mac_set_rxdelay1_response(char* data)
+{
+	if(strcmp(data,"ok"))
+	{
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}		
+}
+
+
+
+unsigned int mac_set_ar(unsigned int state)
 {
 	if(state == 0 | state == 1)
 	{
 		char* command == "mac set ar ";
 
-		//TODO: convert int to char*
+		//int to char*
+		char* state_str;
+		if(state)
+		{
+			state_str = "on";
+		}
+		else
+		{
+			state_str = "off";
+		}
 
-		PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+		//copy all into one array
+		char *result = malloc(strlen(command)+strlen(state_str)+3);
+    	strcpy(result, command);
+    	strcat(result, state_str);
+    	strcat(result, "\r\n");
 
-		// if data is ok, return 1. Else return 0.
+    	rs232_print(RS232_PORT_1, result);
+
+    	return 1;
 	}
 	else
 	{
-		//err message, return 0
+		rs232_print(RS232_PORT_0, "ERROR: mac_set_ar: state is not 0 and 1.\r\n");		
+		return 0;
 	}
 }
 
-int mac_set_rx2(unsigned int dataRate, unsigned long frequency)
+unsigned int mac_set_ar_response(char* data)
+{
+	if(strcmp(data,"ok"))
+	{
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}		
+}
+
+unsigned int mac_set_rx2(unsigned int dataRate, unsigned long frequency)
 {
 	if(dataRate >= 0 & dataRate <= 7)
 	{
@@ -495,22 +1036,74 @@ int mac_set_rx2(unsigned int dataRate, unsigned long frequency)
 		{
 			char* command == "mac set rx2 ";
 
-			//TODO: convert int to char*
 
-			PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+			//int to char*
+			char* dataRate_str;
+			sprintf(dataRate_str, "%u", dataRate);
 
-			// if data is ok, return 1. Else return 0.
+
+    		//convert ulong to string
+    		const int n = snprintf(NULL, 0, "%lu", frequency);
+    		assert(n > 0);
+    		char fre_str[n+1];
+    		int c = snprintf(fre_str, n+1, "%lu", frequency);
+    		assert(fre_str[n] == '\0');
+    		assert(c == n);
+
+
+
+    		char *result = malloc(strlen(command)+strlen(len_str)+4);
+    		strcpy(result, command);
+    		strcat(result, dataRate_str);
+    		strcat(result, " ");
+    		strcat(result, fre_str);
+    		strcat(result, "\r\n");
+
+    		rs232_print(RS232_PORT_1, result);
+
+    		return 1;
 		}
 		else
 		{
-			//err message, return 0
+			rs232_print(RS232_PORT_0, "ERROR: mac_set_rx2: frequency is in the two unlicensed bands.\r\n");		
+			return 0;
 		}
 	}	
 	else
 	{
-		//err message, return 0
+		rs232_print(RS232_PORT_0, "ERROR: mac_set_rx2: dataRate is not between 0 and 7.\r\n");		
+		return 0;
 	}
 }
+
+unsigned int mac_set_rx2_response(char* data)
+{
+	if(strcmp(data,"ok"))
+	{
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}		
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 //MAC Set Channel Commands
 
