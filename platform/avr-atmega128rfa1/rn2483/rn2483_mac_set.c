@@ -98,7 +98,7 @@ unsigned int mac_set_nwkskey(char* nwksesskey)
 	// if data is ok, return 1. Else return 0.
 }
 
-unsigned int mac_set_nwkskey(char* data)
+unsigned int mac_set_nwkskey_response(char* data)
 {
 	if(strcmp(data,"ok"))
 	{
@@ -124,7 +124,7 @@ unsigned int mac_set_appskey(char* appSesskey)
 	// if data is ok, return 1. Else return 0.
 }
 
-unsigned int mac_set_appskey(char* data)
+unsigned int mac_set_appskey_response(char* data)
 {
 	if(strcmp(data,"ok"))
 	{

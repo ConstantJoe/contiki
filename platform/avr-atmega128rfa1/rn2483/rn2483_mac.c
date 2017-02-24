@@ -152,7 +152,7 @@ unsigned int mac_resume()
 	return 1;
 }
 
-unsigned int mac_resume_response()
+unsigned int mac_resume_response(char* data)
 {
 	if(strcmp(data,"ok"))
 	{

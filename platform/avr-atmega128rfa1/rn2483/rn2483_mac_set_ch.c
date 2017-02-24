@@ -100,7 +100,7 @@ unsigned int mac_set_ch_dcycle(unsigned int channelID, unsigned int dutyCycle)
 	}
 }
 
-unsigned int mac_set_ch_dcycle(char* data)
+unsigned int mac_set_ch_dcycle_response(char* data)
 {
 	if(strcmp(data,"ok"))
 	{

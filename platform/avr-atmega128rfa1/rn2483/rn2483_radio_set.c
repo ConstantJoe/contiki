@@ -221,7 +221,7 @@ unsigned int radio_set_afcbw_response(char* data)
 	}	
 }
 
-unsigned int radio_rxbw(char* rxbandwidth)
+unsigned int radio_set_rxbw(char* rxbandwidth)
 {
 	if(strcmp(rxbandwidth,"250") | strcmp(rxbandwidth,"125") | strcmp(rxbandwidth,"62.5") | strcmp(rxbandwidth,"31.3") | 
 		strcmp(rxbandwidth,"15.6") | strcmp(rxbandwidth,"7.8") | strcmp(rxbandwidth,"3.9") | strcmp(rxbandwidth,"200") | 
@@ -264,17 +264,37 @@ unsigned int radio_set_bitrate(unsigned int fskBitRate)
 {
 	if(fskBitRate >= 0 & fskBitRate <= 65535)
 	{
-		char* command == "radio set afcbw ";
+		char* command == "radio set bitrate ";
 
-		
+		char* fskBitRate_str;
+		sprintf(fskBitRate_str, "%u", fskBitRate);
 
-		PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+		//copy all into one array
+		char *result = malloc(strlen(command)+strlen(fskBitRate_str)+3);
+    	strcpy(result, command);
+    	strcat(result, fskBitRate_str);
+    	strcat(result, "\r\n");
 
-		// return 1 or 0
+    	rs232_print(RS232_PORT_1, result);
+
+    	return 1;
 	}
 	else
 	{
-		//err message, return 0
+		rs232_print(RS232_PORT_0, "ERROR: radio_set_bitrate: bitrate chosen not between 0 and 65535.\r\n");
+		return 0;
+	}
+}
+
+unsigned int radio_set_bitrate_response(char* data)
+{
+	if(strcmp(data,"ok"))
+	{
+		return 1;
+	}
+	else
+	{
+		return 0;
 	}
 }
 
@@ -284,16 +304,36 @@ unsigned int radio_set_fdev(unsigned int freqdev)
 	{
 		char* command == "radio set fdev ";
 
-		
+		char* freqdev_str;
+		sprintf(freqdev_str, "%u", freqdev);
 
-		PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+		//copy all into one array
+		char *result = malloc(strlen(command)+strlen(freqdev_str)+3);
+    	strcpy(result, command);
+    	strcat(result, freqdev_str);
+    	strcat(result, "\r\n");
 
-		// return 1 or 0
+    	rs232_print(RS232_PORT_1, result);
+
+    	return 1;
 	}
 	else
 	{
-		//err message, return 0
+		rs232_print(RS232_PORT_0, "ERROR: radio_set_fdev: freqdev chosen not between 0 and 65535.\r\n");
+		return 0;
 	}
+}
+
+unsigned int radio_set_fdev_response(char* data)
+{
+	if(strcmp(data,"ok"))
+	{
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}	
 }
 
 unsigned int radio_set_prlen(unsigned int preamble)
@@ -302,16 +342,36 @@ unsigned int radio_set_prlen(unsigned int preamble)
 	{
 		char* command == "radio set afcbw ";
 
-		
+		char* preamble_str;
+		sprintf(preamble_str, "%u", preamble);
 
-		PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+		//copy all into one array
+		char *result = malloc(strlen(command)+strlen(preamble_str)+3);
+    	strcpy(result, command);
+    	strcat(result, preamble_str);
+    	strcat(result, "\r\n");
 
-		// return 1 or 0
+    	rs232_print(RS232_PORT_1, result);
+
+    	return 1;
 	}
 	else
 	{
-		//err message, return 0
+		rs232_print(RS232_PORT_0, "ERROR: radio_set_prlen: preamble chosen not between 0 and 65535.\r\n");
+		return 0;
 	}
+}
+
+unsigned int radio_set_prlen_response(char* data)
+{
+	if(strcmp(data,"ok"))
+	{
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}	
 }
 
 unsigned int radio_set_crc(unsigned int crcHeader)
@@ -320,16 +380,44 @@ unsigned int radio_set_crc(unsigned int crcHeader)
 	{
 		char* command == "radio set crc ";
 
+		char* crcHeader_str;
+		if(crcHeader)
+		{
+			crcHeader_str = "on";
+		}
+		else
+		{
+			crcHeader_str = "off";
+		}
 		
 
-		PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+		//copy all into one array
+		char *result = malloc(strlen(command)+strlen(crcHeader_str)+3);
+    	strcpy(result, command);
+    	strcat(result, crcHeader_str);
+    	strcat(result, "\r\n");
 
-		// return 1 or 0
+    	rs232_print(RS232_PORT_1, result);
+
+    	return 1;
 	}
 	else
 	{
-		//err message, return 0
+		rs232_print(RS232_PORT_0, "ERROR: radio_set_crc: crcHeader chosen not 0 or 1.\r\n");
+		return 0;
 	}
+}
+
+unsigned int radio_set_crc_response(char* data)
+{
+	if(strcmp(data,"ok"))
+	{
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}	
 }
 
 unsigned int radio_set_iqi(unsigned int iqInvert)
@@ -338,52 +426,119 @@ unsigned int radio_set_iqi(unsigned int iqInvert)
 	{
 		char* command == "radio set iqi ";
 
+		char* iqInvert_str;
+		if(iqInvert)
+		{
+			iqInvert_str = "on";
+		}
+		else
+		{
+			iqInvert_str = "off";
+		}
 		
 
-		PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+		//copy all into one array
+		char *result = malloc(strlen(command)+strlen(iqInvert_str)+3);
+    	strcpy(result, command);
+    	strcat(result, iqInvert_str);
+    	strcat(result, "\r\n");
 
-		// return 1 or 0
+    	rs232_print(RS232_PORT_1, result);
+
+    	return 1;
 	}
 	else
 	{
-		//err message, return 0
+		rs232_print(RS232_PORT_0, "ERROR: radio_set_iqi: iqInvert chosen not 0 or 1.\r\n");
+		return 0;
 	}
+}
+
+unsigned int radio_set_iqi_response(char* data)
+{
+	if(strcmp(data,"ok"))
+	{
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}	
 }
 
 unsigned int radio_set_cr(char* codingRate)
 {
-	if(codingRate == "4/5" | codingRate == "4/6" | codingRate == "4/7" | codingRate == "4/8")
+	if(strcmp(codingRate,"4/5") | strcmp(codingRate,"4/6") | strcmp(codingRate,"4/7") | strcmp(codingRate,"4/8"))
 	{
 		char* command == "radio set cr ";
 
-		
+		//copy all into one array
+		char *result = malloc(strlen(command)+strlen(codingRate)+3);
+    	strcpy(result, command);
+    	strcat(result, codingRate);
+    	strcat(result, "\r\n");
 
-		PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+    	rs232_print(RS232_PORT_1, result);
 
-		// return 1 or 0
+    	return 1;
 	}
 	else
 	{
-		//err message, return 0
+		rs232_print(RS232_PORT_0, "ERROR: radio_set_cr: coding rate chosen not in correct format.\r\n");
+		return 0;
 	}
+}
+
+unsigned int radio_set_cr_response(char* data)
+{
+	if(strcmp(data,"ok"))
+	{
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}	
 }
 
 unsigned int radio_set_wdt(unsigned long watchDog)
 {
 	if(watchDog >= 0 & watchDog <= 4294967295)
 	{
-		char* command == "radio set wdt ";
+    	//convert ulong to string
+    	const int n = snprintf(NULL, 0, "%lu", watchDog);
+    	assert(n > 0);
+    	char len_str[n+1];
+    	int c = snprintf(len_str, n+1, "%lu", watchDog);
+    	assert(len_str[n] == '\0');
+    	assert(c == n);
 
-		
+    	char *result = malloc(strlen(command)+strlen(len_str)+3);
+    	strcpy(result, command);
+    	strcat(result, len_str);
+    	strcat(result, "\r\n");
 
-		PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+    	rs232_print(RS232_PORT_1, result);
 
-		// return 1 or 0
+    	return 1;
 	}
 	else
 	{
-		//err message, return 0
+		rs232_print(RS232_PORT_0, "ERROR: radio_set_wdt: watchDog timeout length not between 0 and 4294967295.\r\n");
+		return 0;
 	}
+}
+
+unsigned int radio_set_wdt_response(char* data)
+{
+	if(strcmp(data,"ok"))
+	{
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}			
 }
 
 unsigned int radio_set_sync(char* syncWord)
@@ -392,11 +547,26 @@ unsigned int radio_set_sync(char* syncWord)
 
 	char* command == "radio set cr ";
 
-		
+	char *result = malloc(strlen(command)+strlen(syncWord)+3);
+    strcpy(result, command);
+    strcat(result, syncWord);
+    strcat(result, "\r\n");
 
-	PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+    rs232_print(RS232_PORT_1, result);
 
-	// return 1 or 0
+    return 1;
+}
+
+unsigned int radio_set_sync_response(char* data)
+{
+	if(strcmp(data,"ok"))
+	{
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}			
 }
 
 unsigned int radio_set_bw(unsigned int bandWidth)
@@ -405,188 +575,34 @@ unsigned int radio_set_bw(unsigned int bandWidth)
 	{
 		char* command == "radio set bw ";
 
-		PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+		char* bandWidth_str;
+		sprintf(bandWidth_str, "%u", bandWidth);
 
-		// return 1 or 0
+		//copy all into one array
+		char *result = malloc(strlen(command)+strlen(bandWidth_str)+3);
+    	strcpy(result, command);
+    	strcat(result, bandWidth_str);
+    	strcat(result, "\r\n");
+
+    	rs232_print(RS232_PORT_1, result);
+
+    	return 1;
 	}
 	else
 	{
-		//err message, return 0
+		rs232_print(RS232_PORT_0, "ERROR: radio_set_bw: bandwith chosen not 125, 250, or 500.\r\n");
+		return 0;
 	}
 }
 
-//Radio Get Commands
-char* radio_get_bt()
+unsigned int radio_set_bw_response(char* data)
 {
-	rs232_print(RS232_PORT_1, "radio get bt\r\n");
-
-	PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
-
-	// return data
+	if(strcmp(data,"ok"))
+	{
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}			
 }
-
-char* radio_get_mod()
-{
-	rs232_print(RS232_PORT_1, "radio get mod\r\n");
-
-	PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
-
-	// return data
-}
-
-unsigned long radio_get_freq()
-{
-	rs232_print(RS232_PORT_1, "radio get freq\r\n");
-
-	PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
-
-	// convert data, return it
-}
-
-int radio_get_pwr()
-{
-	rs232_print(RS232_PORT_1, "radio get pwr\r\n");
-
-	PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
-
-	// return data
-}
-
-char* radio_get_sf()
-{
-	rs232_print(RS232_PORT_1, "radio get sf\r\n");
-
-	PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
-
-	// return data
-}
-
-char* radio_get_afcbw()
-{
-	rs232_print(RS232_PORT_1, "radio get afcbw\r\n");
-
-	PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
-
-	// return data
-}
-
-char* radio_get_rxbw()
-{
-	rs232_print(RS232_PORT_1, "radio get rxbw\r\n");
-
-	PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
-
-	// return data
-}
-
-unsigned int radio_get_bitrate()
-{
-	rs232_print(RS232_PORT_1, "radio get bitrate\r\n");
-
-	PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
-
-	// return data
-}
-
-unsigned int radio_get_fdev()
-{
-	rs232_print(RS232_PORT_1, "radio get fdev\r\n");
-
-	PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
-
-	// return data
-}
-
-unsigned int radio_get_prlen()
-{
-	rs232_print(RS232_PORT_1, "radio get prlen\r\n");
-
-	PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
-
-	// return data
-}
-
-unsigned int radio_get_crc()
-{
-	rs232_print(RS232_PORT_1, "radio get crc\r\n");
-
-	PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
-
-	// return data
-}
-
-unsigned int radio_get_iqi()
-{
-	rs232_print(RS232_PORT_1, "radio get iqi\r\n");
-
-	PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
-
-	// return data
-}
-
-char* radio_get_cr()
-{
-	rs232_print(RS232_PORT_1, "radio get cr\r\n");
-
-	PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
-
-	// return data
-}
-
-unsigned long radio_get_wdt()
-{
-	rs232_print(RS232_PORT_1, "radio get wdt\r\n");
-
-	PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
-
-	// return data
-}
-
-unsigned int radio_get_bw()
-{
-	rs232_print(RS232_PORT_1, "radio get bw\r\n");
-
-	PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
-
-	// return data
-}
-
-int radio_get_snr()
-{
-	rs232_print(RS232_PORT_1, "radio get snr\r\n");
-
-	PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
-
-	// return data
-}
-
-/*---------------------------------------------------------------------------*/
-/*PROCESS_THREAD(rn2483_handler, ev, data)
-{
-  	PROCESS_BEGIN();
-
-  	while(1) 
-  	{
-  		 //Process wait until polled
-  		PROCESS_YIELD();
-  	  	
-  	  	//call function mentioned in data
-
-  	  	//process wait until ev=serial_process_1
-  		PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
-
-  	  	//process_poll/post(rn2483_controller)    
-  	}
-
-  	PROCESS_END();
-}*/
-
-/*---------------------------------------------------------------------------*/
-
-/*PROCESS_THREAD(rn2483_handler, ev, data)
-{
-	PROCESS_BEGIN();
-
-
-	PROCESS_END();
-}*/

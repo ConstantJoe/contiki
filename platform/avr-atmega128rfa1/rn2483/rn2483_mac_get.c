@@ -11,7 +11,7 @@ char* mac_get_devaddr_response(char* data)
 	return data;
 }
 
-char* mac_get_deveui()
+unsigned int mac_get_deveui()
 {
 	rs232_print(RS232_PORT_1, "mac get deveui\r\n");
 
@@ -23,7 +23,7 @@ char* mac_get_deveui_response(char* data)
 	return data;
 }
 
-char* mac_get_appeui()
+unsigned int mac_get_appeui()
 {
 	rs232_print(RS232_PORT_1, "mac get appeui\r\n");
 
@@ -185,7 +185,7 @@ unsigned int mac_get_dcycleps()
 	return 1;
 }
 
-unsigned int mac_get_dcycleps(char* data)
+unsigned int mac_get_dcycleps_response(char* data)
 {
 	return (unsigned int *)strtoull(data, NULL, 0);	
 }
@@ -209,7 +209,7 @@ unsigned int mac_get_gwnb()
 	return 1;
 }
 
-unsigned int mac_get_gwnb(char* data)
+unsigned int mac_get_gwnb_response(char* data)
 {
 	return (unsigned int *)strtoull(data, NULL, 0);
 }

@@ -120,7 +120,7 @@ unsigned int mac_get_ch_status(unsigned int channelID)
 	}
 }
 
-unsigned int mac_get_ch_status(char* data)
+unsigned int mac_get_ch_status_response(char* data)
 {
 	if(strcmp(data,"on"))
 	{
