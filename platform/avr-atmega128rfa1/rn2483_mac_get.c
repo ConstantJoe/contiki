@@ -1,3 +1,5 @@
+#include "rn2483.h"
+
 //MAC Get Commands
 unsigned int mac_get_devaddr()
 {
@@ -147,9 +149,9 @@ unsigned int mac_get_ar_response(char* data)
 
 unsigned int mac_get_rx2(unsigned int freqBand)
 {
-	if(freqBand == 868 | freqBand == 433)
+	if((freqBand == 868) | (freqBand == 433))
 	{
-		char* command == "mac get rx2 ";
+		char* command = "mac get rx2 ";
 
 		char* band_str;
 		sprintf(band_str, "%u", freqBand);

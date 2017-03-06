@@ -1,3 +1,5 @@
+#include "rn2483_sys_set.h"
+
 //System Set Commands
 
 /*Modify EEPROM at address to data. Both address and data must be inputted as hex values

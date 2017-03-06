@@ -1,3 +1,5 @@
+#include "rn2483_radio_get.h"
+
 //Radio Get Commands
 unsigned int radio_get_bt()
 {

@@ -1,3 +1,5 @@
+#include "rn2483_mac_set_ch.h"
+
 //MAC Set Channel Commands
 
 unsigned int mac_set_ch_freq(unsigned int channelID, unsigned long frequency)

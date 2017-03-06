@@ -1,8 +1,10 @@
+#include "rn2483.h"
+
 //MAC Set Commands
 
 unsigned int mac_set_devaddr(unsigned long address)
 {
-	char* command == "mac set devaddr ";
+	char* command = "mac set devaddr ";
 
 	//address to char*
 	char* add_str;
@@ -36,11 +38,11 @@ unsigned int mac_set_deveui(char* deveui)
 {
 	//TODO: complex, check if string is in hex format, correct length
 
-	char* command == "mac set deveui ";
+	char* command = "mac set deveui ";
 
 	//TODO: concat char*s, send off
 
-	PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+	//PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
 
 	// if data is ok, return 1. Else return 0.
 }
@@ -62,11 +64,11 @@ unsigned int mac_set_appeui(char* appeui)
 {
 	//TODO: complex, check if string is in hex format, correct length
 
-	char* command == "mac set appeui ";
+	char* command = "mac set appeui ";
 
 	//TODO: concat char*s, send off
 
-	PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+	//PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
 
 	// if data is ok, return 1. Else return 0.
 }
@@ -89,11 +91,11 @@ unsigned int mac_set_nwkskey(char* nwksesskey)
 {
 	//TODO: complex, check if string is in hex format, correct length
 
-	char* command == "mac set nwkskey ";
+	char* command = "mac set nwkskey ";
 
 	//TODO: concat char*s, send off
 
-	PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+	//PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
 
 	// if data is ok, return 1. Else return 0.
 }
@@ -115,11 +117,11 @@ unsigned int mac_set_appskey(char* appSesskey)
 {
 	//TODO: complex, check if string is in hex format, correct length
 
-	char* command == "mac set appskey ";
+	char* command = "mac set appskey ";
 
 	//TODO: concat char*s, send off
 
-	PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+	//PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
 
 	// if data is ok, return 1. Else return 0.
 }
@@ -142,11 +144,11 @@ unsigned int mac_set_appkey(char* appkey)
 {
 	//TODO: complex, check if string is in hex format, correct length
 
-	char* command == "mac set appkey ";
+	char* command = "mac set appkey ";
 
 	//TODO: concat char*s, send off
 
-	PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+	//PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
 
 	// if data is ok, return 1. Else return 0.
 }
@@ -167,10 +169,10 @@ unsigned int mac_set_pwridx(unsigned int pwrIndex)
 {
 	if(pwrIndex >= 0 && pwrIndex <= 5)
 	{
-		char* command == "mac set pwridx ";
+		char* command = "mac set pwridx ";
 
 		//int to char*
-		char* pwrIndex_str;
+		char* pwrIndex_str = malloc(nDigits(pwrIndex));;
 		sprintf(pwrIndex_str, "%u", pwrIndex);
 
 		//copy all into one array
@@ -207,10 +209,10 @@ unsigned int mac_set_dr(unsigned int dataRate)
 {
 	if(dataRate >= 0 && dataRate <= 7)
 	{
-		char* command == "mac set dr ";
+		char* command = "mac set dr ";
 
 		//int to char*
-		char* dataRate_str;
+		char* dataRate_str = malloc(nDigits(dataRate));;
 		sprintf(dataRate_str, "%u", dataRate);
 
 		//copy all into one array
@@ -246,9 +248,9 @@ unsigned int mac_set_dr_response(char* data)
 
 unsigned int mac_set_adr(unsigned int state)
 {
-	if(state == 1 | state == 0)
+	if((state == 1) | (state == 0))
 	{
-		char* command == "mac set adr ";
+		char* command = "mac set adr ";
 
 		//int to char*
 		char* state_str;
@@ -296,7 +298,7 @@ unsigned int mac_set_bat(unsigned int level)
 {
 	if(level >= 0 && level <= 255)
 	{
-		char* command == "mac set bat ";
+		char* command = "mac set bat ";
 
 		//int to char*
 		char* level_str;
@@ -339,7 +341,7 @@ unsigned int mac_set_retx(unsigned int reTxNb)
 {
 	if(reTxNb >= 0 && reTxNb <= 255)
 	{
-		char* command == "mac set retx ";
+		char* command = "mac set retx ";
 
 		//int to char*
 		char* reTxNb_str;
@@ -378,7 +380,7 @@ unsigned int mac_set_linkchk(unsigned int linkCheck)
 {
 	if(linkCheck >= 0 && linkCheck <= 65535)
 	{
-		char* command == "mac set linkchk ";
+		char* command = "mac set linkchk ";
 
 		//int to char*
 		char* linkCheck_str;
@@ -417,7 +419,7 @@ unsigned int mac_set_rxdelay1(unsigned int rxDelay)
 {
 	if(rxDelay >= 0 & rxDelay <= 65535)
 	{
-		char* command == "mac set rxdelay1 ";
+		char* command = "mac set rxdelay1 ";
 
 		//int to char*
 		char* rxDelay_str;
@@ -458,7 +460,7 @@ unsigned int mac_set_ar(unsigned int state)
 {
 	if(state == 0 | state == 1)
 	{
-		char* command == "mac set ar ";
+		char* command = "mac set ar ";
 
 		//int to char*
 		char* state_str;
@@ -506,7 +508,7 @@ unsigned int mac_set_rx2(unsigned int dataRate, unsigned long frequency)
 	{
 		if((frequency >= 863000000 & frequency <= 870000000)|(frequency >= 433050000 & frequency <= 434790000))
 		{
-			char* command == "mac set rx2 ";
+			char* command = "mac set rx2 ";
 
 
 			//int to char*

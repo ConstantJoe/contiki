@@ -1,10 +1,11 @@
+#include "rn2483.h"
 
 //MAC Commands
 
 /*band can be 868 or 433*/
 unsigned int mac_reset(unsigned int band)
 {
-	if(band == 433 | band == 868)
+	if((band == 433) | (band == 868))
 	{
 		char* command = "mac reset ";
 		
@@ -48,15 +49,15 @@ void mac_tx(char* type, unsigned int portno, char* data)
 {
 	if(strcmp(type,"cnf") | strcmp(type,"uncnf"))
 	{
-		if(portno >= 1 && <= 223)
+		if(portno >= 1 && portno <= 223)
 		{
 			//TODO: check if data is in hex form.
 
-			char* command == "mac tx ";
+			char* command = "mac tx ";
 
 			//TODO: unsigned int to char
 
-			PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+			//PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
 
 			//TODO: response is complex; there's two parts
 		}
@@ -73,13 +74,13 @@ void mac_tx(char* type, unsigned int portno, char* data)
 
 void mac_join(char* mode)
 {
-	if(mode == "otaa" | mode == "abp")
+	if((strcmp(mode,"otaa")) | (strcmp(mode,"abp")))
 	{
-		char* command == "mac join ";
+		char* command = "mac join ";
 
 		//TODO: concat strings
 
-		PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
+		//PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message_1);
 
 		//TODO: response is complex
 	}

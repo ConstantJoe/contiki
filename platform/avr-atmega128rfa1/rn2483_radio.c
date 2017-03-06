@@ -1,3 +1,5 @@
+#include "rn2483_radio.h"
+
 //Radio Commands
 unsigned int radio_rx(unsigned int rxWindowSize)
 {

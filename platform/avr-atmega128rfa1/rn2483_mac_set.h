@@ -7,8 +7,8 @@ unsigned int mac_set_deveui_response(char* data);
 unsigned int mac_set_appeui(char* appeui);
 unsigned int mac_set_appeui_response(char* data);
 
-unsigned int mac_set_nwkskey(char* nwksesskey)
-unsigned int mac_set_nwkskey_response(char* data)
+unsigned int mac_set_nwkskey(char* nwksesskey);
+unsigned int mac_set_nwkskey_response(char* data);
 
 unsigned int mac_set_appskey(char* appSesskey);
 unsigned int mac_set_appskey_response(char* data);

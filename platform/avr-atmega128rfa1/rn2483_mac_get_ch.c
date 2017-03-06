@@ -1,11 +1,13 @@
+#include "rn2483.h"
+
 //MAC Get Channel Commands
 unsigned int mac_get_ch_freq(unsigned int channelID)
 {
-	if(channelID >= 0 & channelID <= 15)
+	if((channelID >= 0) & (channelID <= 15))
 	{
-		char* command == "mac get ch freq ";
+		char* command = "mac get ch freq ";
 
-		char* channelID_str;
+		char* channelID_str = malloc(nDigits(channelID));
 		sprintf(channelID_str, "%u", channelID);
 
 		//copy all into one array
@@ -33,11 +35,11 @@ char* mac_get_ch_freq_response(char* data)
 
 unsigned int mac_get_ch_dcycle(unsigned int channelID)
 {
-	if(channelID >= 0 & channelID <= 15)
+	if((channelID >= 0) & (channelID <= 15))
 	{
-		char* command == "mac get ch dcycle ";
+		char* command = "mac get ch dcycle ";
 
-		char* channelID_str;
+		char* channelID_str = malloc(nDigits(channelID));
 		sprintf(channelID_str, "%u", channelID);
 
 		//copy all into one array
@@ -62,13 +64,13 @@ unsigned int mac_get_ch_dcycle_response(char* data)
 	return (unsigned int *)strtoull(data, NULL, 0);
 }
 
-char* mac_get_ch_drrange(unsigned int channelID)
+unsigned int mac_get_ch_drrange(unsigned int channelID)
 {
-	if(channelID >= 0 & channelID <= 15)
+	if((channelID >= 0) & (channelID <= 15))
 	{
-		char* command == "mac get ch drrange ";
+		char* command = "mac get ch drrange ";
 
-		char* channelID_str;
+		char* channelID_str = malloc(nDigits(channelID));
 		sprintf(channelID_str, "%u", channelID);
 
 		//copy all into one array
@@ -96,11 +98,11 @@ char* mac_get_ch_drrange_response(char* data)
 
 unsigned int mac_get_ch_status(unsigned int channelID)
 {
-	if(channelID >= 0 & channelID <= 15)
+	if((channelID >= 0) & (channelID <= 15))
 	{
-		char* command == "mac get ch status ";
+		char* command = "mac get ch status ";
 
-		char* channelID_str;
+		char* channelID_str = malloc(nDigits(channelID));
 		sprintf(channelID_str, "%u", channelID);
 
 		//copy all into one array

@@ -1,3 +1,4 @@
+#include "rn2483_sys_get.h"
 //System Get Commands
 
 unsigned int sys_get_ver()

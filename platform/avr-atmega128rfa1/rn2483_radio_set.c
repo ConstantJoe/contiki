@@ -1,3 +1,5 @@
+#include "rn2483_radio_set.h"
+
 //Radio Set Commands
 unsigned int radio_set_bt(char* gfBT)
 {
