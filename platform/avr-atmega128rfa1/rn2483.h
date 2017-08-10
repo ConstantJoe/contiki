@@ -13,6 +13,8 @@
 #include "rn2483_radio_set.h"
 #include "rn2483_radio_get.h"
 
+//TODO: for all files: Magic numbers everywhere! Create some definitions here.
+
 int nDigits(int i)
 {
   if (i < 0) i = -i;
@@ -27,3 +29,30 @@ int nDigits(int i)
   if (i < 1000000000) return 9;
   return 10;
 }
+
+unsigned int hexFormCheck(char a)
+{
+	//if the ascii value of the char a indicates that its either a digit or one of A-F
+	if((a >= 48 && a <= 57) | (a >= 65 && a <= 70))
+	{
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}
+}
+
+unsigned int hexFormArrayCheck(char* data)
+{
+	int i;
+	for(i = 0; i < sizeof(data) / sizeof(char); i++)
+	{
+  		if(!hexFormCheck(data[i]))
+  		{
+  			return 0;
+  		}
+	}
+	return 1;
+}
+
