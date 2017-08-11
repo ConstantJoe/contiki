@@ -6,7 +6,7 @@ CONTIKI_TARGET_SOURCEFILES += contiki-main.c params.c
 #Needed for slip
 CONTIKI_TARGET_SOURCEFILES += button-sensor.c sensors.c slip_uart0.c slip.c 
 #Needed for dual uart0 and rn2483
-CONTIKI_TARGET_SOURCEFILES += serial-line-dual.c rn2483_mac.c lmic.c oslmic.c radio.c
+CONTIKI_TARGET_SOURCEFILES += serial-line-dual.c rn2483_mac.c
 
 CONTIKIAVR=$(CONTIKI)/cpu/avr
 CONTIKIBOARD=.
