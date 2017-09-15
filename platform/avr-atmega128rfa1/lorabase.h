@@ -16,6 +16,9 @@
 // BEG: Keep in sync with lorabase.hpp
 //
 
+#define CFG_eu868 1
+#define CFG_sx1272_radio 1
+
 enum _cr_t { CR_4_5=0, CR_4_6, CR_4_7, CR_4_8 };
 enum _sf_t { FSK=0, SF7, SF8, SF9, SF10, SF11, SF12, SFrfu };
 enum _bw_t { BW125=0, BW250, BW500, BWrfu };

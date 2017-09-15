@@ -12,10 +12,12 @@
 #ifndef _hal_hpp_
 #define _hal_hpp_
 
+#define RFA1 1
+
 /*
  * initialize hardware (IO, SPI, TIMER, IRQ).
  */
-void hal_init (void);
+void lmic_hal_init (void);
 
 /*
  * drive radio NSS pin (0=low, 1=high).
@@ -79,5 +81,9 @@ u1_t hal_checkTimer (u4_t targettime);
  *   - action could be HALT or reboot
  */
 void hal_failed (void);
+
+void hal_io_init (void);
+
+void hal_spi_init (void);
 
 #endif // _hal_hpp_

@@ -144,7 +144,7 @@ void os_getDevEui (xref2u1_t buf);
 void os_setCallback (xref2osjob_t job, osjobcb_t cb);
 #endif
 #ifndef os_setTimedCallback
-void os_setTimedCallback(clock_time_t time, void(*f)(void *) cb)
+void os_setTimedCallback (osjob_t* job, ostime_t time, osjobcb_t cb);
 #endif
 #ifndef os_clearCallback
 void os_clearCallback (xref2osjob_t job);

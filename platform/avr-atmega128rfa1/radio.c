@@ -11,7 +11,8 @@
 
 #include <stdio.h>
 #include "lmic.h"
-#include "serial.h"
+//#include "serial.h"
+#include "dev/rs232.h"
 
 // ---------------------------------------- 
 // Registers Mapping
@@ -645,8 +646,10 @@ static void startrx (u1_t rxmode) {
 
 // get random seed from wideband noise rssi
 void radio_init () {
+    rs232_print(RS232_PORT_0, "In radio init\r\n");
     hal_disableIRQs();
 
+    rs232_print(RS232_PORT_0, "IRQs disabled\r\n");
     // manually reset radio
 #ifdef CFG_sx1276_radio
     hal_pin_rst(0); // drive RST pin low
@@ -657,6 +660,7 @@ void radio_init () {
     hal_pin_rst(2); // configure RST pin floating!
     hal_waitUntil(os_getTime()+ms2osticks(5)); // wait 5ms
 
+    rs232_print(RS232_PORT_0, "waited a bit\r\n");
     opmode(OPMODE_SLEEP);
 
     // some sanity checks, e.g., read version number
@@ -672,8 +676,10 @@ void radio_init () {
     // seed 15-byte randomness via noise rssi
     rxlora(RXMODE_RSSI);
 
+    rs232_print(RS232_PORT_0, "Going to rssi mode\r\n");
     while( (readReg(RegOpMode) & OPMODE_MASK) != OPMODE_RX ); // continuous rx
 
+    rs232_print(RS232_PORT_0, "In rssi mode\r\n");
     int i, j;
     for(i=1; i<16; i++) {
         for(j=0; j<8; j++) {
@@ -705,7 +711,10 @@ void radio_init () {
 
     opmode(OPMODE_SLEEP);
 
+    rs232_print(RS232_PORT_0, "About to enable IRQs\r\n");
     hal_enableIRQs();
+
+    rs232_print(RS232_PORT_0, "IRQs enabled\r\n");
 }
 
 // return next random byte derived from seed buffer

@@ -20,7 +20,11 @@
 
 
 #include <stdio.h>
-#include "serial.h"
+#include <string.h>
+#include "sys/clock.h"
+
+#include "dev/rs232.h"
+//#include "serial.h"
 // -----------------------------------------------------------------------------
 // I/O
 #if defined RFA1
@@ -52,17 +56,20 @@ char dest[20];
 // -----------------------------------------------------------------------------
 // I/O
 
-static void hal_io_init ()
+void hal_io_init ()
 {
+	rs232_print(RS232_PORT_0, "In hal io init\r\n");
 	//set input and output pins
 	DDR &= ~(1<<PIN_DIO0);
 	DDR &= ~(1<<PIN_DIO1);
 	
+	rs232_print(RS232_PORT_0, "In hal ddr\r\n");
 	//enable Pin Change interrupts on PB7 and PB6.
 	//if this doesn't work: old rising edge --> falling edge was 1 -> 0. 
 	PCMSK0 |= (1 << PCINT7);
 	PCMSK0 |= (1 << PCINT6); 
 	PCICR  |= (1 << PCIE0); 
+	rs232_print(RS232_PORT_0, "In hal ints\r\n");
 }
 
 // val ==1  => tx 1, rx 0 ; val == 0 => tx 0, rx 1
@@ -129,18 +136,31 @@ ISR(PCINT0_vect)
 }*/
 
 
-static void hal_spi_init ()
+void hal_spi_init ()
 {
+	rs232_print(RS232_PORT_0, "In hal spi init\r\n");
 	//serial_puts((char *) "in hal spi init\r\n");
-	DDR |=  (1 << PIN_SPI_MOSI);
+	uint t = 1 << PB2;
+	rs232_print(RS232_PORT_0, "make t\r\n");	
+
+	DDRB |= t;
+	rs232_print(RS232_PORT_0, "use t\r\n");
+	//DDRB |= (1 << PB2); //problem is here?
+	//DDR |=  (1 << PIN_SPI_MOSI);
+	rs232_print(RS232_PORT_0, "In hal init\r\n");
 	DDR |=  (1 << PIN_SPI_CLK);
+	rs232_print(RS232_PORT_0, "In hal init\r\n");
 	DDR |=  (1 << PIN_SPI_CS);
+	rs232_print(RS232_PORT_0, "In hal init\r\n");
 	DDR &= ~(1 << PIN_SPI_MISO);
+	rs232_print(RS232_PORT_0, "ddr sets okay\r\n");
 
 	PORTB = 1; // CE high=deselect only
+	rs232_print(RS232_PORT_0, "portb set okay\r\n");
 
 	SPCR  = (1<<SPE) | (1<<MSTR) | (1<<SPR0); // SPI Control Register, clk/16=500kHz
 	SPSR |= (1<<SPIF); // Clear int flag
+	rs232_print(RS232_PORT_0, "spi reg set okay\r\n");
 
 	//spix_chipsel(0);
 }
@@ -239,14 +259,30 @@ u1_t hal_spi (u1_t out)
 u4_t hal_ticks ()
 {
 	//return 32-bit system time in ticks
-	return (u4_t) hw_timer_now(); // TODO: avr only has 16 and 8 bit timers - what to do about this?
-
+	//return (u4_t) hw_timer_now(); // TODO: avr only has 16 and 8 bit timers - what to do about this?
+	return clock_time();
 }
 
 // return modified delta ticks from now to specified ticktime (0 for past, FFFF for far future)
 static u2_t deltaticks (u4_t time)
 {
+	rs232_print(RS232_PORT_0, "in delta ticks\r\n");
     u4_t t = hal_ticks();
+    
+    char buf[20];
+    sprintf(buf, "%u", t);
+
+    char buf2[20];
+    sprintf(buf2, "%u", time);
+
+    rs232_print(RS232_PORT_0, "t: ");
+ 	rs232_print(RS232_PORT_0, (char *) buf);
+ 	rs232_print(RS232_PORT_0, "\r\n ");
+ 	rs232_print(RS232_PORT_0, "time: ");
+ 	rs232_print(RS232_PORT_0, (char * ) buf2);
+ 	rs232_print(RS232_PORT_0, "\r\n");   
+
+    
     s4_t d = time - t;
     if( d<=0 ) return 0;    // in the past
     if( (d>>16)!=0 ) return 0xFFFF; // far ahead
@@ -255,6 +291,7 @@ static u2_t deltaticks (u4_t time)
 
 void hal_waitUntil (u4_t time)
 {
+	rs232_print(RS232_PORT_0, "In wait until\r\n");
     while( deltaticks(time) != 0 ); // busy wait until timestamp (in ticks) is reached
 }
 
@@ -288,12 +325,15 @@ u1_t hal_checkTimer (u4_t time)
 
 void hal_disableIRQs ()
 {
+	//__disable_interrupt();
 	cli(); // turns off handling of interrupts in avr
 }
 
 void hal_enableIRQs ()
 {
+	//__enable_interrupt();
 	sei(); // turns on handling of interrupts in avr
+	rs232_print(RS232_PORT_0, "test test test\r\n");
 }
 
 void hal_sleep ()
@@ -307,20 +347,27 @@ void hal_sleep ()
 
 // -----------------------------------------------------------------------------
 
-void hal_init ()
+void lmic_hal_init ()
 {
-    //CHIP_Init(); //resets all values on EFM32
-
+	hal_disableIRQs();
     memset(&HAL, 0x00, sizeof(HAL));
-    //hal_disableIRQs();
+   
+	DDR &= ~(1<<PB7);
+	DDR &= ~(1<<PB6);
+ 
+	PCMSK0 |= (1 << PCINT7);
+	PCMSK0 |= (1 << PCINT6); 
+	PCICR  |= (1 << PCIE0); 
 
-    hal_io_init();	// configure radio I/O and interrupt handler
-
-    hal_spi_init();	// configure radio SPI
-
-    //hal_time_init();	// configure timer and interrupt handler
-
-    //hal_enableIRQs(); //this causes board to halt.
+	DDRB |=  (1 << PB2);
+	DDRB |=  (1 << PB1);
+	DDRB |=  (1 << PB0);
+	DDRB &= ~(1 << PB3);
+	
+	PORTB = 1; // CE high=deselect only
+	
+	SPCR  = (1<<SPE) | (1<<MSTR) | (1<<SPR0); // SPI Control Register, clk/16=500kHz
+	SPSR |= (1<<SPIF); // Clear int flag
 }
 
 void hal_failed ()

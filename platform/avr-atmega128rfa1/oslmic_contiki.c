@@ -11,7 +11,9 @@
 
 #include "lmic.h"
 
-#include "serial.h"
+#include "dev/rs232.h"
+
+//#include "serial.h"
 
 // RUNTIME STATE
 static struct {
@@ -21,18 +23,26 @@ static struct {
 
 static struct ctimer c_timer;
 
+PROCESS(os_runloop, "LMIC event handler");
+
 void os_init () {
+    rs232_print(RS232_PORT_0, "In OS init\r\n");
+    //DDRB |= (1 << PB2);
     //serial_puts((char *) "in os init\r\n");
     memset(&OS, 0x00, sizeof(OS));
+    rs232_print(RS232_PORT_0, "memset fine\r\n");
     //serial_puts((char *) "memset fine\r\n");
-    hal_init();
+    //lmic_hal_init();
+    rs232_print(RS232_PORT_0, "hal fine\r\n");
     //serial_puts((char *) "hal fine\r\n");
     radio_init();
+    rs232_print(RS232_PORT_0, "radio fine\r\n");
     //serial_puts((char *) "radio fine\r\n");
     LMIC_init();
+    rs232_print(RS232_PORT_0, "lmic fine\r\n");
     //serial_puts((char *) "lmic fine\r\n");
 
-    process_start(&serial_line_process_0, NULL);
+    process_start(&os_runloop, NULL);
 
 }
 
@@ -99,8 +109,20 @@ void os_setCallback (osjob_t* job, osjobcb_t cb) {
     // TODO: set event timer, that polls runloop when it expires.
 }*/
 
-void os_setTimedCallback(clock_time_t time, void(*f)(void *) cb) {
-    ctimer_set(&c_timer, time, cb, NULL);
+/*void os_setTimedCallback(clock_time_t time, void(*f)(void *)) {
+    ctimer_set(&c_timer, time, f, NULL);
+}*/
+
+void os_setTimedCallback (osjob_t* job, ostime_t time, osjobcb_t cb) {
+        
+    //convert ostime_t to clock_time_t
+
+    //convert osjobcb_t to void(*f)(void *) (a callback to the function)
+
+    // the above was the right idea, but it would be best not to change the function parameters as that would require a lot of changes to lmic.c
+    ctimer_set(&c_timer, time, &cb, NULL);
+
+    // what happens if two functions try to use the ctimer at once?
 }
 // execute jobs from timer and from run queue
 /*void os_runloop () {
@@ -128,8 +150,9 @@ PROCESS_THREAD(os_runloop, ev, data)
 {
   PROCESS_BEGIN();
 
+  rs232_print(RS232_PORT_0, "In OS runloop\r\n");
   while(1) {
-
+    rs232_print(RS232_PORT_0, "In OS runloop loop\r\n");
     //no jobs available, wait for poll
     PROCESS_YIELD();
 
