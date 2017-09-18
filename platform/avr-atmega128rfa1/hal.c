@@ -24,6 +24,7 @@
 #include "sys/clock.h"
 
 #include "dev/rs232.h"
+#include "sys/etimer.h"
 //#include "serial.h"
 // -----------------------------------------------------------------------------
 // I/O
@@ -50,6 +51,10 @@ static struct
 } HAL;
 
 volatile u1_t port_b_old = 0xFF;     // default is high 
+
+//PROCESS(timer_wait_loop, "timer event handler");
+
+//static struct etimer et;
 
 char dest[20];
 
@@ -266,7 +271,7 @@ u4_t hal_ticks ()
 // return modified delta ticks from now to specified ticktime (0 for past, FFFF for far future)
 static u2_t deltaticks (u4_t time)
 {
-	rs232_print(RS232_PORT_0, "in delta ticks\r\n");
+	/*rs232_print(RS232_PORT_0, "in delta ticks\r\n");
     u4_t t = hal_ticks();
     
     char buf[20];
@@ -286,13 +291,51 @@ static u2_t deltaticks (u4_t time)
     s4_t d = time - t;
     if( d<=0 ) return 0;    // in the past
     if( (d>>16)!=0 ) return 0xFFFF; // far ahead
-    return (u2_t)d;
+    return (u2_t)d;*/
+    return 0;
 }
 
 void hal_waitUntil (u4_t time)
 {
+	sei();
+
 	rs232_print(RS232_PORT_0, "In wait until\r\n");
-    while( deltaticks(time) != 0 ); // busy wait until timestamp (in ticks) is reached
+
+	/*char buf[20];
+    sprintf(buf, "%u", time);
+
+    char buf2[20];
+    sprintf(buf2, "%u", os_getTime());
+
+
+
+    rs232_print(RS232_PORT_0, "time: ");
+ 	rs232_print(RS232_PORT_0, (char *) buf);
+ 	rs232_print(RS232_PORT_0, "\r\n ");
+ 	rs232_print(RS232_PORT_0, "os get time: ");
+ 	rs232_print(RS232_PORT_0, (char * ) buf2);
+ 	rs232_print(RS232_PORT_0, "\r\n");  *//*
+ 	*-clock_time_t t = 1;
+ 	clock_time_t endticks = clock_time() + t;
+    if (sizeof(clock_time_t) == 1) {
+       while ((signed char )(clock_time() - endticks) < 0) {rs232_print(RS232_PORT_0, "1");;}
+     } else if (sizeof(clock_time_t) == 2) {
+       while ((signed short)(clock_time() - endticks) < 0) {rs232_print(RS232_PORT_0, "2");;}
+     } else {
+      while ((signed long )(clock_time() - endticks) < 0) {sprintf(buf, "%ld", clock_time()); rs232_print(RS232_PORT_0, (char * )buf); rs232_print(RS232_PORT_0, "\r\n");}
+  	}*/
+
+	clock_wait(1);
+	rs232_print(RS232_PORT_0, "done waiting\r\n");
+
+	//this constant loop is not suitable for Contiki.
+	//better to have a wait
+
+	//etimer_set(&et, time);
+
+	//PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&et));
+
+    //while( deltaticks(time) != 0 ); // busy wait until timestamp (in ticks) is reached
 }
 
 // check and rewind for target time
@@ -326,14 +369,20 @@ u1_t hal_checkTimer (u4_t time)
 void hal_disableIRQs ()
 {
 	//__disable_interrupt();
-	cli(); // turns off handling of interrupts in avr
+	cli(); // turns off handling of interrupts in avr 
+	rs232_print(RS232_PORT_0, "disable irqs\r\n");
+	//PCICR  &= ~(1 << PCIE0); 
 }
 
 void hal_enableIRQs ()
 {
 	//__enable_interrupt();
 	sei(); // turns on handling of interrupts in avr
-	rs232_print(RS232_PORT_0, "test test test\r\n");
+	rs232_print(RS232_PORT_0, "enable irqs\r\n");
+	
+	//testing out something - instead of disabling all interrupts, just disabling the PCINT0 ones
+	//so timer should still work
+	//PCICR  |= (1 << PCIE0);  error is here
 }
 
 void hal_sleep ()
@@ -368,6 +417,8 @@ void lmic_hal_init ()
 	
 	SPCR  = (1<<SPE) | (1<<MSTR) | (1<<SPR0); // SPI Control Register, clk/16=500kHz
 	SPSR |= (1<<SPIF); // Clear int flag
+
+	//process_start(&os_runloop, NULL);
 }
 
 void hal_failed ()
@@ -379,3 +430,17 @@ void hal_failed ()
     //while(1);
 }
 
+
+//A process just for simulating "waiting"
+/*PROCESS_THREAD(timer_wait_loop, ev, data)
+{
+  PROCESS_BEGIN();
+
+  rs232_print(RS232_PORT_0, "In OS runloop\r\n");
+  while(1) {
+    
+    PROCESS_YIELD();
+
+  }
+  PROCESS_END();
+}*/

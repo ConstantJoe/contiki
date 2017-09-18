@@ -23,7 +23,7 @@ static struct {
 
 static struct ctimer c_timer;
 
-PROCESS(os_runloop, "LMIC event handler");
+//PROCESS(os_runloop, "LMIC event handler");
 
 void os_init () {
     rs232_print(RS232_PORT_0, "In OS init\r\n");
@@ -42,7 +42,7 @@ void os_init () {
     rs232_print(RS232_PORT_0, "lmic fine\r\n");
     //serial_puts((char *) "lmic fine\r\n");
 
-    process_start(&os_runloop, NULL);
+    //process_start(&os_runloop, NULL);
 
 }
 
@@ -69,20 +69,27 @@ void os_clearCallback (osjob_t* job) {
 
 // schedule immediately runnable job
 void os_setCallback (osjob_t* job, osjobcb_t cb) {
-    osjob_t** pnext;
-    hal_disableIRQs();
+    //osjob_t** pnext;
+    //hal_disableIRQs();
     // remove if job was already queued
-    os_clearCallback(job);
+    //os_clearCallback(job);
     // fill-in job
     job->func = cb;
     job->next = NULL;
     // add to end of run queue
-    for(pnext=&OS.runnablejobs; *pnext; pnext=&((*pnext)->next));
-    *pnext = job;
-    hal_enableIRQs();
+    //for(pnext=&OS.runnablejobs; *pnext; pnext=&((*pnext)->next));
+    //*pnext = job;
+    //hal_enableIRQs();
+
+    //rs232_print(RS232_PORT_0, "run job from inside set callback\r\n");
+    job->func(job);
+    //rs232_print(RS232_PORT_0, "job ran successfully\r\n");
+
+
+    //Having trouble calling the job from inside the runloop process - is there any downside to just immediately running the job?
 
     /* Wake up runloop process */
-    process_poll(&os_runloop);
+    //process_poll(&os_runloop);
 }
 
 // schedule timed job
@@ -115,12 +122,12 @@ void os_setCallback (osjob_t* job, osjobcb_t cb) {
 
 void os_setTimedCallback (osjob_t* job, ostime_t time, osjobcb_t cb) {
         
-    //convert ostime_t to clock_time_t
-
     //convert osjobcb_t to void(*f)(void *) (a callback to the function)
 
+
+
     // the above was the right idea, but it would be best not to change the function parameters as that would require a lot of changes to lmic.c
-    ctimer_set(&c_timer, time, &cb, NULL);
+    ctimer_set(&c_timer, time, (void (*)(void *)) cb, job);
 
     // what happens if two functions try to use the ctimer at once?
 }
@@ -146,7 +153,7 @@ void os_setTimedCallback (osjob_t* job, ostime_t time, osjobcb_t cb) {
     }
 }*/
 
-PROCESS_THREAD(os_runloop, ev, data)
+/*PROCESS_THREAD(os_runloop, ev, data)
 {
   PROCESS_BEGIN();
 
@@ -155,7 +162,7 @@ PROCESS_THREAD(os_runloop, ev, data)
     rs232_print(RS232_PORT_0, "In OS runloop loop\r\n");
     //no jobs available, wait for poll
     PROCESS_YIELD();
-
+    rs232_print(RS232_PORT_0, "In OS runloop - polled\r\n");
     //run all queued jobs
 
 
@@ -171,10 +178,13 @@ PROCESS_THREAD(os_runloop, ev, data)
     
         hal_enableIRQs();
 
+        rs232_print(RS232_PORT_0, "There's a job - run it\r\n");
         if(j) { // run job callback
+            rs232_print(RS232_PORT_0, "Attempt to run\r\n");
             j->func(j);
+            rs232_print(RS232_PORT_0, "Ran it\r\n");
         }    
     }    
   }
   PROCESS_END();
-}
+}*/

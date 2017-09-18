@@ -121,6 +121,7 @@ typedef s4_t  ostime_t;
 
 struct osjob_t;  // fwd decl.
 typedef void (*osjobcb_t) (struct osjob_t*);
+//typedef void (*osjobcb_t) (void *);
 struct osjob_t {
     struct osjob_t* next;
     ostime_t deadline;
