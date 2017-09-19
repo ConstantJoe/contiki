@@ -25,6 +25,8 @@
 #include "sys/clock.h"
 #include "sys/etimer.h"
 
+#include "dev/rs232.h"
+
 // -----------------------------------------------------------------------------
 // I/O
 #if defined RFA1
@@ -91,6 +93,7 @@ extern void radio_irq_handler(u1_t dio);
 // so inside the interrupt we figure out which pin made it fire
 ISR(PCINT0_vect)
 {
+	rs232_print(RS232_PORT_0, "Interrupt!\r\n");
 	u1_t changed_bits;
 
 	changed_bits = PINB ^ port_b_old;
@@ -133,7 +136,12 @@ void hal_waitUntil (u4_t time)
 	//TODO: Sometimes crashes here
 	sei();
 
-	clock_wait(1); //TODO: convert time properly
+	char buf[20];
+	sprintf(buf, "%lu", time);
+	rs232_print(RS232_PORT_0, "Wait for ");
+	rs232_print(RS232_PORT_0, (char *) buf);
+	rs232_print(RS232_PORT_0, " ticks\r\n");
+	clock_wait(time); //TODO: some of the timer tick calculations that call this function are based on much smaller ticks
 }
   
 

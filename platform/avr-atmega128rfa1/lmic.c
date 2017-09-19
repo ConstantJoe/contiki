@@ -12,6 +12,9 @@
 //! \file
 #include "lmic.h"
 
+
+#include "dev/rs232.h"
+
 #if !defined(MINRX_SYMS)
 #define MINRX_SYMS 5
 #endif // !defined(MINRX_SYMS)
@@ -888,7 +891,9 @@ static void runEngineUpdate (xref2osjob_t osjob) {
 
 static void reportEvent (ev_t ev)
 {
-    ON_LMIC_EVENT(ev);
+    rs232_print(RS232_PORT_0, "In report event!\r\n");
+
+    ON_LMIC_EVENT(ev); //calls onEvent func
     engineUpdate();
 }
 
@@ -901,6 +906,7 @@ static void runReset (xref2osjob_t osjob) {
 }
 
 static void stateJustJoined (void) {
+    rs232_print(RS232_PORT_0, "reached state just joined!\r\n");
     LMIC.seqnoDn     = LMIC.seqnoUp = 0;
     LMIC.rejoinCnt   = 0;
     LMIC.dnConf      = LMIC.adrChanged = LMIC.ladrAns = LMIC.devsAns = 0;
@@ -1206,6 +1212,7 @@ static void setupRx1 (osjobcb_t func) {
 
 // Called by HAL once TX complete and delivers exact end of TX time stamp in LMIC.rxtime
 static void txDone (ostime_t delay, osjobcb_t func) {
+    rs232_print(RS232_PORT_0, "in tx done!\r\n");
 	#if defined CLASS_B
     if( (LMIC.opmode & (OP_TRACK|OP_PINGABLE|OP_PINGINI)) == (OP_TRACK|OP_PINGABLE) ) {
         rxschedInit(&LMIC.ping);    // note: reuses LMIC.frame buffer!
@@ -1228,6 +1235,7 @@ static void txDone (ostime_t delay, osjobcb_t func) {
         LMIC.rxtime = LMIC.txend + delay + (PAMBL_SYMS-MINRX_SYMS)*dr2hsym(LMIC.dndr);
         LMIC.rxsyms = MINRX_SYMS;
     }
+    rs232_print(RS232_PORT_0, "About to set a timed callback!\r\n");
     os_setTimedCallback(&LMIC.osjob, LMIC.rxtime - RX_RAMPUP, func);
 }
 
@@ -1338,11 +1346,13 @@ static void processRx1Jacc (xref2osjob_t osjob) {
 
 
 static void setupRx1Jacc (xref2osjob_t osjob) {
+    rs232_print(RS232_PORT_0, "in rx1 callback after a wait!\r\n");
     setupRx1(FUNC_ADDR(processRx1Jacc));
 }
 
 
 static void jreqDone (xref2osjob_t osjob) {
+    rs232_print(RS232_PORT_0, "in jreq done callback!\r\n");
     txDone(DELAY_JACC1_osticks, FUNC_ADDR(setupRx1Jacc));
 }
 
@@ -1581,9 +1591,11 @@ static void buildJoinRequest (u1_t ftype) {
 
     LMIC.dataLen = LEN_JR;
     LMIC.devNonce++;
+    rs232_print(RS232_PORT_0, "Join request built!!\r\n");
 }
 
 static void startJoining (xref2osjob_t osjob) {
+    rs232_print(RS232_PORT_0, "start joining!\r\n");
     reportEvent(EV_JOINING);
 }
 
@@ -1762,14 +1774,17 @@ static void startRxPing (xref2osjob_t osjob) {
 // Decide what to do next for the MAC layer of a device
 static void engineUpdate (void) {
     // Check for ongoing state: scan or TX/RX transaction
+    rs232_print(RS232_PORT_0, "in engineUpdate\r\n");
     if( (LMIC.opmode & (OP_SCAN|OP_TXRXPEND|OP_SHUTDOWN)) != 0 ) 
         return;
 
     if( LMIC.devaddr == 0 && (LMIC.opmode & OP_JOINING) == 0 ) {
+        rs232_print(RS232_PORT_0, "No devaddr - Going to start joining!\r\n");
         LMIC_startJoining();
         return;
     }
 
+    rs232_print(RS232_PORT_0, "Gone past start joining!\r\n");
     ostime_t now    = os_getTime();
     ostime_t rxtime = 0;
     ostime_t txbeg  = 0;
@@ -1783,6 +1798,7 @@ static void engineUpdate (void) {
 	#endif
 
     if( (LMIC.opmode & (OP_JOINING|OP_REJOIN|OP_TXDATA|OP_POLL)) != 0 ) {
+        rs232_print(RS232_PORT_0, "in cond 1 - need to tx!\r\n");
         // Need to TX some data...
         // Assuming txChnl points to channel which first becomes available again.
         bit_t jacc = ((LMIC.opmode & (OP_JOINING|OP_REJOIN)) != 0 ? 1 : 0);
@@ -1793,6 +1809,8 @@ static void engineUpdate (void) {
         } else {
             txbeg = LMIC.txend;
         }
+
+        rs232_print(RS232_PORT_0, "did jacc!\r\n");
         // Delayed TX or waiting for duty cycle?
         if( (LMIC.globalDutyRate != 0 || (LMIC.opmode & OP_RNDTX) != 0)  &&  (txbeg - LMIC.globalDutyAvail) < 0 )
             txbeg = LMIC.globalDutyAvail;
@@ -1814,6 +1832,7 @@ static void engineUpdate (void) {
         txbeg = now;
             dr_t txdr = (dr_t)LMIC.datarate;
             if( jacc ) {
+                rs232_print(RS232_PORT_0, "jacc true!\r\n");
                 u1_t ftype;
                 if( (LMIC.opmode & OP_REJOIN) != 0 ) {
                     txdr = lowerDR(txdr, LMIC.rejoinCnt);
@@ -1821,9 +1840,12 @@ static void engineUpdate (void) {
                 } else {
                     ftype = HDR_FTYPE_JREQ;
                 }
+                rs232_print(RS232_PORT_0, "start building join request!\r\n");
                 buildJoinRequest(ftype);
                 LMIC.osjob.func = FUNC_ADDR(jreqDone);
+                rs232_print(RS232_PORT_0, "osjob func assigned!\r\n");
             } else {
+                rs232_print(RS232_PORT_0, "jacc false!\r\n");
                 if( LMIC.seqnoDn >= 0xFFFFFF80 ) {
                     // Imminent roll over - proactively reset MAC
                     // Device has to react! NWK will not roll over and just stop sending.
@@ -1844,10 +1866,15 @@ static void engineUpdate (void) {
             LMIC.rps    = setCr(updr2rps(txdr), (cr_t)LMIC.errcr);
             LMIC.dndr   = txdr;  // carry TX datarate (can be != LMIC.datarate) over to txDone/setupRx1
             LMIC.opmode = (LMIC.opmode & ~(OP_POLL|OP_RNDTX)) | OP_TXRXPEND | OP_NEXTCHNL;
+
+            rs232_print(RS232_PORT_0, "LMIC params set!\r\n");
             updateTx(txbeg);
+            rs232_print(RS232_PORT_0, "Update tx done!\r\n");
             os_radio(RADIO_TX);
+            rs232_print(RS232_PORT_0, "os radio tx done!\r\n");
             return;
         }
+        rs232_print(RS232_PORT_0, "txbeg was too big!\r\n");
         // Cannot yet TX
         if( (LMIC.opmode & OP_TRACK) == 0 )
             goto txdelay; // We don't track the beacon - nothing else to do - so wait for the time to TX
@@ -1896,6 +1923,12 @@ static void engineUpdate (void) {
 	#endif
 
   txdelay:
+    rs232_print(RS232_PORT_0, "tx delay needed!\r\n");
+    char buf[20];
+    sprintf(buf, "%d", txbeg-TX_RAMPUP);
+    rs232_print(RS232_PORT_0, "Waiting for: ");
+    rs232_print(RS232_PORT_0, (char * ) buf);
+    rs232_print(RS232_PORT_0, "ticks\r\n");
     os_setTimedCallback(&LMIC.osjob, txbeg-TX_RAMPUP, FUNC_ADDR(runEngineUpdate));
 }
 

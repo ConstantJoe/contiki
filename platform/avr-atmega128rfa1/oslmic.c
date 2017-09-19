@@ -62,4 +62,6 @@ void os_setCallback (osjob_t* job, osjobcb_t cb) {
 // schedule timed job
 void os_setTimedCallback (osjob_t* job, ostime_t time, osjobcb_t cb) {
     ctimer_set(&c_timer, time, (void (*)(void *)) cb, job);
+
+    //TODO: add a pool of timers 
 }

@@ -95,7 +95,8 @@ void os_init (void);
 #endif
 
 #ifndef OSTICKS_PER_SEC
-#define OSTICKS_PER_SEC 32768
+//#define OSTICKS_PER_SEC 32768
+#define OSTICKS_PER_SEC CLOCK_SECOND
 #elif OSTICKS_PER_SEC < 10000 || OSTICKS_PER_SEC > 64516
 #error Illegal OSTICKS_PER_SEC - must be in range [10000:64516]. One tick must be 15.5us .. 100us long.
 #endif
