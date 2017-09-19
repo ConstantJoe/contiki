@@ -36,6 +36,9 @@ typedef const char* str_t;
 
 #include <string.h>
 #include "hal.h"
+
+#include "sys/ctimer.h"
+
 #define EV(a,b,c) /**/
 #define DO_DEVDB(field1,field2) /**/
 #if !defined(CFG_noassert)
@@ -80,7 +83,6 @@ u1_t radio_rand1 (void);
 void radio_init (void);
 void radio_irq_handler (u1_t dio);
 void os_init (void);
-void os_runloop (void);
 
 //================================================================================
 
@@ -101,7 +103,7 @@ void os_runloop (void);
 typedef s4_t  ostime_t;
 
 #if !HAS_ostick_conv
-#define us2osticks(us)   ((ostime_t)( ((s8_t)(us) * OSTICKS_PER_SEC) / 1000000))
+#define us2osticks(us)   ((ostime_t)( ((s8_t)(us) * OSTICKS_PER_SEC) / 1000000)) //TODO: modify OSTICKS_PER_SEC to fit Contiki
 #define ms2osticks(ms)   ((ostime_t)( ((s8_t)(ms) * OSTICKS_PER_SEC)    / 1000))
 #define sec2osticks(sec) ((ostime_t)( (s8_t)(sec) * OSTICKS_PER_SEC))
 #define osticks2ms(os)   ((s4_t)(((os)*(s8_t)1000    ) / OSTICKS_PER_SEC))
@@ -116,6 +118,7 @@ typedef s4_t  ostime_t;
 
 struct osjob_t;  // fwd decl.
 typedef void (*osjobcb_t) (struct osjob_t*);
+
 struct osjob_t {
     struct osjob_t* next;
     ostime_t deadline;
@@ -139,7 +142,7 @@ void os_getDevEui (xref2u1_t buf);
 void os_setCallback (xref2osjob_t job, osjobcb_t cb);
 #endif
 #ifndef os_setTimedCallback
-void os_setTimedCallback (xref2osjob_t job, ostime_t time, osjobcb_t cb);
+void os_setTimedCallback (osjob_t* job, ostime_t time, osjobcb_t cb);
 #endif
 #ifndef os_clearCallback
 void os_clearCallback (xref2osjob_t job);

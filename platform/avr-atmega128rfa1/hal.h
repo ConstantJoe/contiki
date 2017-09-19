@@ -73,7 +73,7 @@ void hal_waitUntil (u4_t time);
  *   - return 1 if target time is close
  *   - otherwise rewind timer for target time or full period and return 0
  */
-u1_t hal_checkTimer (u4_t targettime);
+//u1_t hal_checkTimer (u4_t targettime);
 
 /*
  * perform fatal failure action.
@@ -82,8 +82,8 @@ u1_t hal_checkTimer (u4_t targettime);
  */
 void hal_failed (void);
 
-void hal_io_init (void);
+//void hal_io_init (void);
 
-void hal_spi_init (void);
+//void hal_spi_init (void);
 
 #endif // _hal_hpp_

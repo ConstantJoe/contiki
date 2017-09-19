@@ -11,24 +11,23 @@
 
 #include "lmic.h"
 
-#include "serial.h"
-
 // RUNTIME STATE
 static struct {
     osjob_t* scheduledjobs;
     osjob_t* runnablejobs;
 } OS;
 
+static struct ctimer c_timer;
+
 void os_init () {
-    serial_puts((char *) "in os init\r\n");
+
     memset(&OS, 0x00, sizeof(OS));
-    serial_puts((char *) "memset fine\r\n");
-    hal_init();
-    serial_puts((char *) "hal fine\r\n");
+
+    lmic_hal_init();
+
     radio_init();
-    serial_puts((char *) "radio fine\r\n");
+
     LMIC_init();
-    serial_puts((char *) "lmic fine\r\n");
 }
 
 ostime_t os_getTime () {
@@ -54,59 +53,13 @@ void os_clearCallback (osjob_t* job) {
 
 // schedule immediately runnable job
 void os_setCallback (osjob_t* job, osjobcb_t cb) {
-    osjob_t** pnext;
-    hal_disableIRQs();
-    // remove if job was already queued
-    os_clearCallback(job);
-    // fill-in job
     job->func = cb;
     job->next = NULL;
-    // add to end of run queue
-    for(pnext=&OS.runnablejobs; *pnext; pnext=&((*pnext)->next));
-    *pnext = job;
-    hal_enableIRQs();
+
+    job->func(job);
 }
 
 // schedule timed job
 void os_setTimedCallback (osjob_t* job, ostime_t time, osjobcb_t cb) {
-    osjob_t** pnext;
-    hal_disableIRQs();
-    // remove if job was already queued
-    os_clearCallback(job);
-    // fill-in job
-    job->deadline = time;
-    job->func = cb;
-    job->next = NULL;
-    // insert into schedule
-    for(pnext=&OS.scheduledjobs; *pnext; pnext=&((*pnext)->next)) {
-        if((*pnext)->deadline - time > 0) { // (cmp diff, not abs!)
-            // enqueue before next element and stop
-            job->next = *pnext;
-            break;
-        }
-    }
-    *pnext = job;
-    hal_enableIRQs();
-}
-
-// execute jobs from timer and from run queue
-void os_runloop () {
-    while(1) {
-        osjob_t* j = NULL;
-        hal_disableIRQs();
-        // check for runnable jobs
-        if(OS.runnablejobs) {
-            j = OS.runnablejobs;
-            OS.runnablejobs = j->next;
-        } else if(OS.scheduledjobs && hal_checkTimer(OS.scheduledjobs->deadline)) { // check for expired timed jobs
-            j = OS.scheduledjobs;
-            OS.scheduledjobs = j->next;
-        } else { // nothing pending
-            hal_sleep(); // wake by irq (timer already restarted)
-        }
-        hal_enableIRQs();
-        if(j) { // run job callback
-            j->func(j);
-        }
-    }
+    ctimer_set(&c_timer, time, (void (*)(void *)) cb, job);
 }

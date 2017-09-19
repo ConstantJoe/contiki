@@ -21,11 +21,10 @@
 
 #include <stdio.h>
 #include <string.h>
-#include "sys/clock.h"
 
-#include "dev/rs232.h"
+#include "sys/clock.h"
 #include "sys/etimer.h"
-//#include "serial.h"
+
 // -----------------------------------------------------------------------------
 // I/O
 #if defined RFA1
@@ -52,30 +51,7 @@ static struct
 
 volatile u1_t port_b_old = 0xFF;     // default is high 
 
-//PROCESS(timer_wait_loop, "timer event handler");
-
-//static struct etimer et;
-
 char dest[20];
-
-// -----------------------------------------------------------------------------
-// I/O
-
-void hal_io_init ()
-{
-	rs232_print(RS232_PORT_0, "In hal io init\r\n");
-	//set input and output pins
-	DDR &= ~(1<<PIN_DIO0);
-	DDR &= ~(1<<PIN_DIO1);
-	
-	rs232_print(RS232_PORT_0, "In hal ddr\r\n");
-	//enable Pin Change interrupts on PB7 and PB6.
-	//if this doesn't work: old rising edge --> falling edge was 1 -> 0. 
-	PCMSK0 |= (1 << PCINT7);
-	PCMSK0 |= (1 << PCINT6); 
-	PCICR  |= (1 << PCIE0); 
-	rs232_print(RS232_PORT_0, "In hal ints\r\n");
-}
 
 // val ==1  => tx 1, rx 0 ; val == 0 => tx 0, rx 1
 void hal_pin_rxtx (u1_t val)
@@ -90,7 +66,6 @@ void hal_pin_rxtx (u1_t val)
 		PORT |=  (1<<PIN_SPI_RX_SWITCH);
 	}*/
 }
-
 
 // set radio NSS pin to given value
 void hal_pin_nss (u1_t val)
@@ -130,259 +105,49 @@ ISR(PCINT0_vect)
 	}
 }
 
-/*void spix_chipsel(unsigned char sel)
-{
-	if(sel) {
-		PORT &= ~(1<<0); // Drop CE to enable slave - mode 0
-	}
-	else {
-		PORT |= (1<<0); // raise to disable SPI slave - mode 0
-	}
-}*/
 
-
-void hal_spi_init ()
-{
-	rs232_print(RS232_PORT_0, "In hal spi init\r\n");
-	//serial_puts((char *) "in hal spi init\r\n");
-	uint t = 1 << PB2;
-	rs232_print(RS232_PORT_0, "make t\r\n");	
-
-	DDRB |= t;
-	rs232_print(RS232_PORT_0, "use t\r\n");
-	//DDRB |= (1 << PB2); //problem is here?
-	//DDR |=  (1 << PIN_SPI_MOSI);
-	rs232_print(RS232_PORT_0, "In hal init\r\n");
-	DDR |=  (1 << PIN_SPI_CLK);
-	rs232_print(RS232_PORT_0, "In hal init\r\n");
-	DDR |=  (1 << PIN_SPI_CS);
-	rs232_print(RS232_PORT_0, "In hal init\r\n");
-	DDR &= ~(1 << PIN_SPI_MISO);
-	rs232_print(RS232_PORT_0, "ddr sets okay\r\n");
-
-	PORTB = 1; // CE high=deselect only
-	rs232_print(RS232_PORT_0, "portb set okay\r\n");
-
-	SPCR  = (1<<SPE) | (1<<MSTR) | (1<<SPR0); // SPI Control Register, clk/16=500kHz
-	SPSR |= (1<<SPIF); // Clear int flag
-	rs232_print(RS232_PORT_0, "spi reg set okay\r\n");
-
-	//spix_chipsel(0);
-}
 
 // perform SPI transaction with radio
 u1_t hal_spi (u1_t out)
 {
-	//serial_puts((char *) "in hal spi\r\n");
-	/* For every byte sent, one is received */
-	//spix_chipsel(1);
 
-
-	//serial_puts((char *) "init slave spi\r\n");
 	SPDR = out; // init slave spi
-	//serial_puts((char *) "wait for tx done\r\n");
 	while (!(SPSR && (1<<SPIF))); // wait for tx done
-	//serial_puts((char *) "tx done\r\n");
 	u1_t in = SPDR;
-	//serial_puts((char *) "read SPDR\r\n");
-	//sprintf(dest, "%d", in);
-	//serial_puts((char *) dest);
-	//serial_puts((char *) "\r\n");
-	SPSR |= (1<<SPIF); // Clear int flag
 
-	//serial_puts((char *) "undo chipsel\r\n");
-	//spix_chipsel(0);
+	SPSR |= (1<<SPIF); // Clear int flag
 
 	return in;
 }
 
 
-// -----------------------------------------------------------------------------
-// TIME
-//static uint8_t       rtcInitialized = 0;    /**< 1 if rtc is initialized */
-//static uint32_t      rtcFreq;               /**< RTC Frequence. 32.768 kHz */
-
-/***************************************************************************//**
- * @brief RTC Interrupt Handler, invoke callback function if defined.
- ******************************************************************************/
-/*void RTC_IRQHandler(void)
-{
-	if (RTC_IntGet() & RTC_IF_OF)
-	{
-		HAL.ticks ++;
-	}
-
-    if(RTC_IntGet() & RTC_IF_COMP0) // expired
-    {
-        // do nothing, only wake up cpu
-    }
-	RTC_IntClear(_RTC_IF_MASK); // clear IRQ flags
-}*/
-
-
-/*static void hal_time_init ()
-{
-	//using external clock instead
-
-	RTC_Init_TypeDef init;
-
-	rtcInitialized = 1;
-
-	// Ensure LE modules are accessible 
-	CMU_ClockEnable(cmuClock_CORELE, true);
-
-	// Enable LFACLK in CMU (will also enable oscillator if not enabled) 
-	CMU_ClockSelectSet(cmuClock_LFA, cmuSelect_LFXO);
-
-	// Use the prescaler to reduce power consumption. 
-	CMU_ClockDivSet(cmuClock_RTC, cmuClkDiv_1);
-
-	rtcFreq = CMU_ClockFreqGet(cmuClock_RTC);
-
-	// Enable clock to RTC module 
-	CMU_ClockEnable(cmuClock_RTC, true);
-
-	init.enable   = false;
-	init.debugRun = false;
-	init.comp0Top = false;
-	//init.comp0Top = true; // Count to max before wrapping 
-	RTC_Init(&init);
-
-	// Disable interrupt generation from RTC0 
-	RTC_IntDisable(_RTC_IF_MASK);
-
-	// Enable interrupts 
-	NVIC_ClearPendingIRQ(RTC_IRQn);
-	NVIC_EnableIRQ(RTC_IRQn);
-
-	// Enable RTC 
-	RTC_Enable(true);
-
-	RTC_IntEnable(RTC_IF_OF);	//Enable interrupt on overflow
-}*/
-
 u4_t hal_ticks ()
 {
 	//return 32-bit system time in ticks
-	//return (u4_t) hw_timer_now(); // TODO: avr only has 16 and 8 bit timers - what to do about this?
 	return clock_time();
 }
 
-// return modified delta ticks from now to specified ticktime (0 for past, FFFF for far future)
-static u2_t deltaticks (u4_t time)
-{
-	/*rs232_print(RS232_PORT_0, "in delta ticks\r\n");
-    u4_t t = hal_ticks();
-    
-    char buf[20];
-    sprintf(buf, "%u", t);
-
-    char buf2[20];
-    sprintf(buf2, "%u", time);
-
-    rs232_print(RS232_PORT_0, "t: ");
- 	rs232_print(RS232_PORT_0, (char *) buf);
- 	rs232_print(RS232_PORT_0, "\r\n ");
- 	rs232_print(RS232_PORT_0, "time: ");
- 	rs232_print(RS232_PORT_0, (char * ) buf2);
- 	rs232_print(RS232_PORT_0, "\r\n");   
-
-    
-    s4_t d = time - t;
-    if( d<=0 ) return 0;    // in the past
-    if( (d>>16)!=0 ) return 0xFFFF; // far ahead
-    return (u2_t)d;*/
-    return 0;
-}
 
 void hal_waitUntil (u4_t time)
 {
+	//TODO: Sometimes crashes here
 	sei();
 
-	rs232_print(RS232_PORT_0, "In wait until\r\n");
-
-	/*char buf[20];
-    sprintf(buf, "%u", time);
-
-    char buf2[20];
-    sprintf(buf2, "%u", os_getTime());
-
-
-
-    rs232_print(RS232_PORT_0, "time: ");
- 	rs232_print(RS232_PORT_0, (char *) buf);
- 	rs232_print(RS232_PORT_0, "\r\n ");
- 	rs232_print(RS232_PORT_0, "os get time: ");
- 	rs232_print(RS232_PORT_0, (char * ) buf2);
- 	rs232_print(RS232_PORT_0, "\r\n");  *//*
- 	*-clock_time_t t = 1;
- 	clock_time_t endticks = clock_time() + t;
-    if (sizeof(clock_time_t) == 1) {
-       while ((signed char )(clock_time() - endticks) < 0) {rs232_print(RS232_PORT_0, "1");;}
-     } else if (sizeof(clock_time_t) == 2) {
-       while ((signed short)(clock_time() - endticks) < 0) {rs232_print(RS232_PORT_0, "2");;}
-     } else {
-      while ((signed long )(clock_time() - endticks) < 0) {sprintf(buf, "%ld", clock_time()); rs232_print(RS232_PORT_0, (char * )buf); rs232_print(RS232_PORT_0, "\r\n");}
-  	}*/
-
-	clock_wait(1);
-	rs232_print(RS232_PORT_0, "done waiting\r\n");
-
-	//this constant loop is not suitable for Contiki.
-	//better to have a wait
-
-	//etimer_set(&et, time);
-
-	//PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&et));
-
-    //while( deltaticks(time) != 0 ); // busy wait until timestamp (in ticks) is reached
-}
-
-// check and rewind for target time
-u1_t hal_checkTimer (u4_t time)
-{
-    u2_t dt;
-	
-	//TODO: problem is here.
-
-	//RTC_IntClear(RTC_IF_COMP0);		//clear any pending interrupts TODO: update this
-
-
-    if((dt = deltaticks(time)) < 5) // event is now (a few ticks ahead)
-    {
-    	//RTC_IntDisable(RTC_IF_COMP0);	// disable IE
-        return 1;
-    }
-    else // rewind timer (fully or to exact time))
-    {
-    	//RTC_CompareSet(0, RTC_CounterGet() + dt);   // set comparator
-    	//RTC_IntEnable(RTC_IF_COMP0);  // enable IE
-        return 0;
-    }
+	clock_wait(1); //TODO: convert time properly
 }
   
-
 
 // -----------------------------------------------------------------------------
 // IRQ
 
 void hal_disableIRQs ()
 {
-	//__disable_interrupt();
 	cli(); // turns off handling of interrupts in avr 
-	rs232_print(RS232_PORT_0, "disable irqs\r\n");
-	//PCICR  &= ~(1 << PCIE0); 
 }
 
 void hal_enableIRQs ()
 {
-	//__enable_interrupt();
 	sei(); // turns on handling of interrupts in avr
-	rs232_print(RS232_PORT_0, "enable irqs\r\n");
-	
-	//testing out something - instead of disabling all interrupts, just disabling the PCINT0 ones
-	//so timer should still work
-	//PCICR  |= (1 << PCIE0);  error is here
 }
 
 void hal_sleep ()
@@ -401,13 +166,16 @@ void lmic_hal_init ()
 	hal_disableIRQs();
     memset(&HAL, 0x00, sizeof(HAL));
    
+   //set DIO input pins
 	DDR &= ~(1<<PB7);
 	DDR &= ~(1<<PB6);
  
+ 	//enable Pin Change interrupts on PB7 and PB6.
 	PCMSK0 |= (1 << PCINT7);
 	PCMSK0 |= (1 << PCINT6); 
 	PCICR  |= (1 << PCIE0); 
 
+	//set MISO, MOSI, NSS, CLK
 	DDRB |=  (1 << PB2);
 	DDRB |=  (1 << PB1);
 	DDRB |=  (1 << PB0);
@@ -417,30 +185,11 @@ void lmic_hal_init ()
 	
 	SPCR  = (1<<SPE) | (1<<MSTR) | (1<<SPR0); // SPI Control Register, clk/16=500kHz
 	SPSR |= (1<<SPIF); // Clear int flag
-
-	//process_start(&os_runloop, NULL);
 }
 
 void hal_failed ()
 {
-	//debug_led(1);
 	// HALT...
     hal_disableIRQs();
     hal_sleep();
-    //while(1);
 }
-
-
-//A process just for simulating "waiting"
-/*PROCESS_THREAD(timer_wait_loop, ev, data)
-{
-  PROCESS_BEGIN();
-
-  rs232_print(RS232_PORT_0, "In OS runloop\r\n");
-  while(1) {
-    
-    PROCESS_YIELD();
-
-  }
-  PROCESS_END();
-}*/

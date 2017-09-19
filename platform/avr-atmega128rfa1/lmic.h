@@ -15,7 +15,7 @@
 #ifndef _lmic_h_
 #define _lmic_h_
 
-#include "oslmic_contiki.h"
+#include "oslmic.h"
 #include "lorabase.h"
 
 // LMIC version
