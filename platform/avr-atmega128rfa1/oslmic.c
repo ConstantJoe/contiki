@@ -11,13 +11,20 @@
 
 #include "lmic.h"
 
+#include "dev/rs232.h"
+#include <stdio.h>
+
 // RUNTIME STATE
 static struct {
     osjob_t* scheduledjobs;
     osjob_t* runnablejobs;
 } OS;
 
-static struct ctimer c_timer;
+#define CTIMERS_SIZE_OF_POOL 10
+
+static struct ctimer c_timers[CTIMERS_SIZE_OF_POOL];
+
+//static ctimer_holder c_timers[10];
 
 void os_init () {
 
@@ -61,7 +68,25 @@ void os_setCallback (osjob_t* job, osjobcb_t cb) {
 
 // schedule timed job
 void os_setTimedCallback (osjob_t* job, ostime_t time, osjobcb_t cb) {
-    ctimer_set(&c_timer, time, (void (*)(void *)) cb, job);
+    
+    //set a callback using one of the pool of timers
+    rs232_print(RS232_PORT_0, "Setting a timed callback.\r\n");
+    int i;
+    for(i=0;i<CTIMERS_SIZE_OF_POOL;i++){
+        if(ctimer_expired(&c_timers[i])){
+            rs232_print(RS232_PORT_0, "Set one.\r\n");
+            rs232_print(RS232_PORT_0, "Waiting for ");
+            char buf[20];
+            sprintf(buf, "%d", time);
+            rs232_print(RS232_PORT_0, (char *)buf);
+            rs232_print(RS232_PORT_0, " ticks.\r\n");
+            ctimer_set(&c_timers[i], time, (void (*)(void *)) cb, job);
+            return;
+        }
+    }
+
+    rs232_print(RS232_PORT_0, "All timers are currently used.\r\n");
+    //ctimer_set(&c_timer, time, (void (*)(void *)) cb, job);
 
     //TODO: add a pool of timers 
 }

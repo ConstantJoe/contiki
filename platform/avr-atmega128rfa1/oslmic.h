@@ -86,6 +86,7 @@ void os_init (void);
 
 //================================================================================
 
+//TODO: timing is incorrect. 
 
 #ifndef RX_RAMPUP
 #define RX_RAMPUP  (us2osticks(2000))
@@ -104,7 +105,7 @@ void os_init (void);
 typedef s4_t  ostime_t;
 
 #if !HAS_ostick_conv
-#define us2osticks(us)   ((ostime_t)( ((s8_t)(us) * OSTICKS_PER_SEC) / 1000000)) //TODO: modify OSTICKS_PER_SEC to fit Contiki
+#define us2osticks(us)   ((ostime_t)( ((s8_t)(us) * OSTICKS_PER_SEC) / 1000000))
 #define ms2osticks(ms)   ((ostime_t)( ((s8_t)(ms) * OSTICKS_PER_SEC)    / 1000))
 #define sec2osticks(sec) ((ostime_t)( (s8_t)(sec) * OSTICKS_PER_SEC))
 #define osticks2ms(os)   ((s4_t)(((os)*(s8_t)1000    ) / OSTICKS_PER_SEC))

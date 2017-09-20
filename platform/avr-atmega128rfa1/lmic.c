@@ -14,6 +14,7 @@
 
 
 #include "dev/rs232.h"
+#include <stdio.h>
 
 #if !defined(MINRX_SYMS)
 #define MINRX_SYMS 5
@@ -1195,6 +1196,7 @@ static void setupRx2 (void) {
 
 
 static void schedRx2 (ostime_t delay, osjobcb_t func) {
+    rs232_print(RS232_PORT_0, "in schedRx2!\r\n");
     // Add 1.5 symbols we need 5 out of 8. Try to sync 1.5 symbols into the preamble.
     LMIC.rxtime = LMIC.txend + delay + (PAMBL_SYMS-MINRX_SYMS)*dr2hsym(LMIC.dn2Dr);
     os_setTimedCallback(&LMIC.osjob, LMIC.rxtime - RX_RAMPUP, func);
@@ -1251,10 +1253,12 @@ static void onJoinFailed (xref2osjob_t osjob) {
 
 
 static bit_t processJoinAccept (void) {
+    rs232_print(RS232_PORT_0, "in processJoinAccept!\r\n");
     ASSERT(LMIC.txrxFlags != TXRX_DNW1 || LMIC.dataLen != 0);
     ASSERT((LMIC.opmode & OP_TXRXPEND)!=0);
 
     if( LMIC.dataLen == 0 ) {
+        rs232_print(RS232_PORT_0, "join failed, retry!\r\n");
       nojoinframe:
         if( (LMIC.opmode & OP_JOINING) == 0 ) {
             ASSERT((LMIC.opmode & OP_REJOIN) != 0);
@@ -1276,6 +1280,7 @@ static bit_t processJoinAccept (void) {
                             : FUNC_ADDR(runEngineUpdate)); // next step to be delayed
         return 1;
     }
+    rs232_print(RS232_PORT_0, "join accepted!!\r\n");
     u1_t hdr  = LMIC.frame[0];
     u1_t dlen = LMIC.dataLen;
     u4_t mic  = os_rlsbf4(&LMIC.frame[dlen-4]); // safe before modified by encrypt!
@@ -1327,6 +1332,7 @@ static bit_t processJoinAccept (void) {
 
 
 static void processRx2Jacc (xref2osjob_t osjob) {
+    rs232_print(RS232_PORT_0, "in process rx2 jacc!\r\n");
     if( LMIC.dataLen == 0 )
         LMIC.txrxFlags = 0;  // nothing in 1st/2nd DN slot
     processJoinAccept();
@@ -1334,12 +1340,14 @@ static void processRx2Jacc (xref2osjob_t osjob) {
 
 
 static void setupRx2Jacc (xref2osjob_t osjob) {
+    rs232_print(RS232_PORT_0, "in setup rx2 jacc!\r\n");
     LMIC.osjob.func = FUNC_ADDR(processRx2Jacc);
     setupRx2();
 }
 
 
 static void processRx1Jacc (xref2osjob_t osjob) {
+    rs232_print(RS232_PORT_0, "in process rx1 jacc!\r\n");
     if( LMIC.dataLen == 0 || !processJoinAccept() )
         schedRx2(DELAY_JACC2_osticks, FUNC_ADDR(setupRx2Jacc));
 }
@@ -1925,10 +1933,18 @@ static void engineUpdate (void) {
   txdelay:
     rs232_print(RS232_PORT_0, "tx delay needed!\r\n");
     char buf[20];
-    sprintf(buf, "%d", txbeg-TX_RAMPUP);
+    char buf2[20];
+    char buf3[20];
+    sprintf(buf, "%ld", txbeg-TX_RAMPUP);
+    sprintf(buf2, "%ld", txbeg);
+    sprintf(buf3, "%ld", TX_RAMPUP);
     rs232_print(RS232_PORT_0, "Waiting for: ");
     rs232_print(RS232_PORT_0, (char * ) buf);
     rs232_print(RS232_PORT_0, "ticks\r\n");
+    rs232_print(RS232_PORT_0, (char * ) buf2);
+    rs232_print(RS232_PORT_0, "ticks for txbeg\r\n");
+    rs232_print(RS232_PORT_0, (char * ) buf3);
+    rs232_print(RS232_PORT_0, "ticks for TX_RAMPUP\r\n");
     os_setTimedCallback(&LMIC.osjob, txbeg-TX_RAMPUP, FUNC_ADDR(runEngineUpdate));
 }
 

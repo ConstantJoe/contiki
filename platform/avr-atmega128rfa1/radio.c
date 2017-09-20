@@ -806,6 +806,7 @@ void radio_irq_handler (u1_t dio) {
 }
 
 void os_radio (u1_t mode) {
+    rs232_print(RS232_PORT_0, "Transmitting!\r\n");
     hal_disableIRQs();
     switch (mode) {
       case RADIO_RST:
