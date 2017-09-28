@@ -68,6 +68,8 @@ u4_t hal_ticks (void);
  */
 void hal_waitUntil (u4_t time);
 
+void hal_wait (u4_t time);
+
 /*
  * check and rewind timer for target time.
  *   - return 1 if target time is close

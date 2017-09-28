@@ -36,14 +36,11 @@
    */ \
   TIMSK = _BV (OCIE0);
 
-#elif defined (__AVR_ATmega128RFA1__) && 0
+#elif defined (__AVR_ATmega128RFA1__) //&& 0
 /* Uses the general routine below at present */
 
 #define AVR_OUTPUT_COMPARE_INT TIMER0_COMPA_vect
 #define OCRSetup() \
-  /* Select internal clock */ \
-  ASSR = 0x00; 				  \
-\
   /* Set counter to zero */   \
   TCNT0 = 0;				  \
 \
@@ -53,7 +50,7 @@
    * pre-scale factor is 1024, we want CLOCK_CONF_SECOND ticks / sec: \
    * F_CPU = 1024 * CLOCK_CONF_SECOND * OCR0A, less 1 for CTC mode \
    */ \
-  OCR0A = F_CPU/1024/CLOCK_CONF_SECOND - 1; \
+  OCR0A = F_CPU/256UL/CLOCK_CONF_SECOND/2 - 1; \
 \
   /* 								\
    * Set timer control register: 	\
@@ -61,10 +58,10 @@
    *  - counter reset via comparison register (WGM01) \
    */ 								\
   TCCR0A = _BV(WGM01); \
-  TCCR0B =  _BV(CS00) | _BV(CS02); \
+  TCCR0B =  _BV(CS02); \
 \
   /* Clear interrupt flag register */ \
-  TIFR0 = TIFR0; \
+  TIFR0 = 0x00; \
 \
   /* \
    * Raise interrupt when value in OCR0 is reached. Note that the \

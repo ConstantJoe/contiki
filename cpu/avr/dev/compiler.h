@@ -23,8 +23,8 @@
 
 
 #else /* --- GCC --- */
-#ifndef __AVR_ATmega128__
-#define __AVR_ATmega128__
+#ifndef __AVR_ATmega128RFA1__
+#define __AVR_ATmega128RFA1__
 #endif
 #include <avr/signal.h>
 #include <avr/interrupt.h>

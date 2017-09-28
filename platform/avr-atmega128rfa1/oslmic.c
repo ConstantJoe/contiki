@@ -27,14 +27,18 @@ static struct ctimer c_timers[CTIMERS_SIZE_OF_POOL];
 //static ctimer_holder c_timers[10];
 
 void os_init () {
-
+    rs232_print(RS232_PORT_0, "In os init\r\n");
     memset(&OS, 0x00, sizeof(OS));
 
     lmic_hal_init();
 
+    rs232_print(RS232_PORT_0, "hal done\r\n");
     radio_init();
 
+    rs232_print(RS232_PORT_0, "radio done\r\n");
     LMIC_init();
+
+    rs232_print(RS232_PORT_0, "lmic done\r\n");
 }
 
 ostime_t os_getTime () {
@@ -69,18 +73,44 @@ void os_setCallback (osjob_t* job, osjobcb_t cb) {
 // schedule timed job
 void os_setTimedCallback (osjob_t* job, ostime_t time, osjobcb_t cb) {
     
+    //currently its waiting "time" amount of time
+    //instead it should waiting "time" - current time amount of time
     //set a callback using one of the pool of timers
     rs232_print(RS232_PORT_0, "Setting a timed callback.\r\n");
     int i;
     for(i=0;i<CTIMERS_SIZE_OF_POOL;i++){
         if(ctimer_expired(&c_timers[i])){
+            ostime_t ctime = os_getTime();
+
             rs232_print(RS232_PORT_0, "Set one.\r\n");
-            rs232_print(RS232_PORT_0, "Waiting for ");
+            rs232_print(RS232_PORT_0, "Time target is ");
             char buf[20];
-            sprintf(buf, "%d", time);
+            sprintf(buf, "%lu", time);
             rs232_print(RS232_PORT_0, (char *)buf);
             rs232_print(RS232_PORT_0, " ticks.\r\n");
-            ctimer_set(&c_timers[i], time, (void (*)(void *)) cb, job);
+
+            rs232_print(RS232_PORT_0, "Current time is ");
+            char buf2[20];
+            sprintf(buf2, "%lu", ctime);
+            rs232_print(RS232_PORT_0, (char *)buf2);
+            rs232_print(RS232_PORT_0, " ticks.\r\n");
+
+            
+
+            ostime_t t;
+            if(ctime > time){
+                t = 0;
+            } else{
+                t = time - ctime;
+            }
+
+            rs232_print(RS232_PORT_0, "So we should wait for ");
+            char buf3[20];
+            sprintf(buf3, "%lu", t);
+            rs232_print(RS232_PORT_0, (char *)buf3);
+            rs232_print(RS232_PORT_0, " ticks.\r\n");
+            
+            ctimer_set(&c_timers[i], t, (void (*)(void *)) cb, job);
             return;
         }
     }

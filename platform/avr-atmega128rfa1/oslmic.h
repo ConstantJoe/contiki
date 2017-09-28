@@ -95,6 +95,8 @@ void os_init (void);
 #define TX_RAMPUP  (us2osticks(2000))
 #endif
 
+//This is a problem: Contiki os ticks are 128 per second - not precise enough for LMIC.
+//TODO: look into rtimers
 #ifndef OSTICKS_PER_SEC
 //#define OSTICKS_PER_SEC 32768
 #define OSTICKS_PER_SEC CLOCK_SECOND

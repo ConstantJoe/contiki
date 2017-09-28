@@ -631,6 +631,11 @@ static void updateTx (ostime_t txbeg) {
     u4_t freq = LMIC.channelFreq[LMIC.txChnl];
     // Update global/band specific duty cycle stats
     ostime_t airtime = calcAirTime(LMIC.rps, LMIC.dataLen);
+    rs232_print(RS232_PORT_0, "Airtime: \r\n");
+         char buf[20];
+         sprintf(buf, "%lu", airtime);
+          rs232_print(RS232_PORT_0, (char *) buf);
+           rs232_print(RS232_PORT_0, "\r\n");
     // Update channel/global duty cycle stats
     xref2band_t band = &LMIC.bands[freq & 0x3];
     LMIC.freq  = freq & ~(u4_t)3;
@@ -641,9 +646,16 @@ static void updateTx (ostime_t txbeg) {
 }
 
 static ostime_t nextTx (ostime_t now) {
+    //TODO: Calc going weird here. Txbeg not being calculated properly.
     u1_t bmap=0xF;
+     rs232_print(RS232_PORT_0, "In next tx!\r\n");
     do {
         ostime_t mintime = now + /*10h*/36000*OSTICKS_PER_SEC;
+         rs232_print(RS232_PORT_0, "Mintime:\r\n");
+         char buf[20];
+         sprintf(buf, "%lu", mintime);
+          rs232_print(RS232_PORT_0, (char *) buf);
+           rs232_print(RS232_PORT_0, "\r\n");
         u1_t band=0;
         u1_t bi;
         for(bi=0; bi<4; bi++ ) {
@@ -686,7 +698,28 @@ static void initJoinLoop (void) {
     setDrJoin(DRCHG_SET, DR_SF7);
     initDefaultChannels(1);
     ASSERT((LMIC.opmode & OP_NEXTCHNL)==0);
-    LMIC.txend = LMIC.bands[BAND_MILLI].avail + rndDelay(8);
+
+    ostime_t r = rndDelay(8); //a random delay between 0 and 0 seconds?
+    LMIC.txend = LMIC.bands[BAND_MILLI].avail + r; //8 seconds sounds like a lot?? Why is this needed for txbeg?
+    //It takes this long to set up the radio?
+
+    rs232_print(RS232_PORT_0, "Pre:\r\n");
+    char buf1[20];
+    sprintf(buf1, "%lu", LMIC.bands[BAND_MILLI].avail);
+    rs232_print(RS232_PORT_0, (char*) buf1);
+    rs232_print(RS232_PORT_0, "\r\n");
+
+    char buf2[20]; //wait 8 seconds
+    sprintf(buf2, "%lu", r);
+    rs232_print(RS232_PORT_0, "Post:\r\n");
+    rs232_print(RS232_PORT_0, (char *) buf2);
+    rs232_print(RS232_PORT_0, "\r\n");
+
+    char buf3[20]; //wait 8 seconds
+    sprintf(buf3, "%lu", LMIC.txend);
+    rs232_print(RS232_PORT_0, "LMIC.txend:\r\n");
+    rs232_print(RS232_PORT_0, (char *) buf3);
+    rs232_print(RS232_PORT_0, "\r\n");
 }
 
 
@@ -710,7 +743,8 @@ static ostime_t nextJoinState (void) {
     // Duty cycle is based on txend.
     ostime_t time = os_getTime();
     if( time - LMIC.bands[BAND_MILLI].avail < 0 )
-        time = LMIC.bands[BAND_MILLI].avail;
+        time = LMIC.bands[BAND_MILLI].avail; //TODO: this is really big?  Figure out why.
+         
     LMIC.txend = time +
         (isTESTMODE()
          // Avoid collision with JOIN ACCEPT @ SF12 being sent by GW (but we missed it)
@@ -842,6 +876,7 @@ static void initJoinLoop (void) {
     LMIC.txChnl = 0;
     LMIC.adrTxPow = 20;
     ASSERT((LMIC.opmode & OP_NEXTCHNL)==0);
+    rs232_print(RS232_PORT_0, "In init Join loop US915.\r\n");
     LMIC.txend = os_getTime();
     setDrJoin(DRCHG_SET, DR_SF7);
 }
@@ -1199,6 +1234,42 @@ static void schedRx2 (ostime_t delay, osjobcb_t func) {
     rs232_print(RS232_PORT_0, "in schedRx2!\r\n");
     // Add 1.5 symbols we need 5 out of 8. Try to sync 1.5 symbols into the preamble.
     LMIC.rxtime = LMIC.txend + delay + (PAMBL_SYMS-MINRX_SYMS)*dr2hsym(LMIC.dn2Dr);
+
+    char buf2[20];
+    sprintf(buf2, "%lu", LMIC.rxtime);
+
+    rs232_print(RS232_PORT_0, "LMIC.rxtime:\r\n");
+    rs232_print(RS232_PORT_0, (char *) buf2);
+    rs232_print(RS232_PORT_0, "\r\n");
+
+    char buf1[20];
+    sprintf(buf1, "%lu", LMIC.txend);
+
+    rs232_print(RS232_PORT_0, "LMIC.txend:\r\n");
+    rs232_print(RS232_PORT_0, (char *) buf1);
+    rs232_print(RS232_PORT_0, "\r\n");
+
+    char buf4[20];
+    sprintf(buf4, "%lu", delay);
+
+    rs232_print(RS232_PORT_0, "delay: \r\n");
+    rs232_print(RS232_PORT_0, (char *) buf4);
+    rs232_print(RS232_PORT_0, "\r\n");
+    
+    char buf5[20];
+    sprintf(buf5, "%lu", PAMBL_SYMS-MINRX_SYMS);
+
+    rs232_print(RS232_PORT_0, "PAMBL_SYMS-MINRX_SYMS:\r\n");
+    rs232_print(RS232_PORT_0, (char *) buf5);
+    rs232_print(RS232_PORT_0, "\r\n");
+
+    char buf6[20];
+    sprintf(buf6, "%lu", dr2hsym(LMIC.dn2Dr));
+
+    rs232_print(RS232_PORT_0, "dr2hsym(LMIC.dn2Dr):\r\n");
+    rs232_print(RS232_PORT_0, (char *) buf6);
+    rs232_print(RS232_PORT_0, "\r\n");
+    
     os_setTimedCallback(&LMIC.osjob, LMIC.rxtime - RX_RAMPUP, func);
 }
 
@@ -1215,7 +1286,14 @@ static void setupRx1 (osjobcb_t func) {
 // Called by HAL once TX complete and delivers exact end of TX time stamp in LMIC.rxtime
 static void txDone (ostime_t delay, osjobcb_t func) {
     rs232_print(RS232_PORT_0, "in tx done!\r\n");
-	#if defined CLASS_B
+
+    char buf[20];
+	sprintf(buf, "%lu", delay);
+
+    rs232_print(RS232_PORT_0, "delay required:\r\n");
+    rs232_print(RS232_PORT_0, (char *) buf);
+    rs232_print(RS232_PORT_0, "\r\n");
+    #if defined CLASS_B
     if( (LMIC.opmode & (OP_TRACK|OP_PINGABLE|OP_PINGINI)) == (OP_TRACK|OP_PINGABLE) ) {
         rxschedInit(&LMIC.ping);    // note: reuses LMIC.frame buffer!
         LMIC.opmode |= OP_PINGINI;
@@ -1238,6 +1316,51 @@ static void txDone (ostime_t delay, osjobcb_t func) {
         LMIC.rxsyms = MINRX_SYMS;
     }
     rs232_print(RS232_PORT_0, "About to set a timed callback!\r\n");
+    
+    /*char buf2[20];
+    sprintf(buf2, "%lu", LMIC.rxtime);
+
+    rs232_print(RS232_PORT_0, "LMIC.rxtime:\r\n");
+    rs232_print(RS232_PORT_0, (char *) buf2);
+    rs232_print(RS232_PORT_0, "\r\n");
+
+    char buf1[20];
+    sprintf(buf1, "%lu", LMIC.txend);
+
+    rs232_print(RS232_PORT_0, "LMIC.txend:\r\n");
+    rs232_print(RS232_PORT_0, (char *) buf1);
+    rs232_print(RS232_PORT_0, "\r\n");
+
+    char buf4[20];
+    sprintf(buf4, "%lu", delay);
+
+    rs232_print(RS232_PORT_0, "delay: \r\n");
+    rs232_print(RS232_PORT_0, (char *) buf4);
+    rs232_print(RS232_PORT_0, "\r\n");
+    
+    char buf5[20];
+    sprintf(buf5, "%lu", PRERX_FSK);
+
+    rs232_print(RS232_PORT_0, "PRERX_FSK:\r\n");
+    rs232_print(RS232_PORT_0, (char *) buf5);
+    rs232_print(RS232_PORT_0, "\r\n");
+
+    char buf6[20];
+    sprintf(buf6, "%lu", us2osticksRound(160));
+
+    rs232_print(RS232_PORT_0, "us2osticksRound(160):\r\n");
+    rs232_print(RS232_PORT_0, (char *) buf6);
+    rs232_print(RS232_PORT_0, "\r\n");
+
+
+    char buf3[20];
+    sprintf(buf3, "%lu", RX_RAMPUP);
+
+    rs232_print(RS232_PORT_0, "RX_RAMPUP:\r\n");
+    rs232_print(RS232_PORT_0, (char *) buf3);
+    rs232_print(RS232_PORT_0, "\r\n");*/
+
+
     os_setTimedCallback(&LMIC.osjob, LMIC.rxtime - RX_RAMPUP, func);
 }
 
@@ -1340,7 +1463,7 @@ static void processRx2Jacc (xref2osjob_t osjob) {
 
 
 static void setupRx2Jacc (xref2osjob_t osjob) {
-    rs232_print(RS232_PORT_0, "in setup rx2 jacc!\r\n");
+    //rs232_print(RS232_PORT_0, "in setup rx2 jacc!\r\n");
     LMIC.osjob.func = FUNC_ADDR(processRx2Jacc);
     setupRx2();
 }
@@ -1807,26 +1930,32 @@ static void engineUpdate (void) {
 
     if( (LMIC.opmode & (OP_JOINING|OP_REJOIN|OP_TXDATA|OP_POLL)) != 0 ) {
         rs232_print(RS232_PORT_0, "in cond 1 - need to tx!\r\n");
+        rs232_print(RS232_PORT_0, "finding how txbeg is calculated:\r\n");
         // Need to TX some data...
         // Assuming txChnl points to channel which first becomes available again.
         bit_t jacc = ((LMIC.opmode & (OP_JOINING|OP_REJOIN)) != 0 ? 1 : 0);
         // Find next suitable channel and return availability time
         if( (LMIC.opmode & OP_NEXTCHNL) != 0 ) {
+            rs232_print(RS232_PORT_0, "1.\r\n");
             txbeg = LMIC.txend = nextTx(now);
             LMIC.opmode &= ~OP_NEXTCHNL;
         } else {
+            rs232_print(RS232_PORT_0, "2.\r\n");
             txbeg = LMIC.txend;
         }
 
         rs232_print(RS232_PORT_0, "did jacc!\r\n");
         // Delayed TX or waiting for duty cycle?
-        if( (LMIC.globalDutyRate != 0 || (LMIC.opmode & OP_RNDTX) != 0)  &&  (txbeg - LMIC.globalDutyAvail) < 0 )
+        if( (LMIC.globalDutyRate != 0 || (LMIC.opmode & OP_RNDTX) != 0)  &&  (txbeg - LMIC.globalDutyAvail) < 0 ){
+            rs232_print(RS232_PORT_0, "3.\r\n");
             txbeg = LMIC.globalDutyAvail;
+        }
 		#if defined CLASS_B
         // If we're tracking a beacon...
         // then make sure TX-RX transaction is complete before beacon
         if( (LMIC.opmode & OP_TRACK) != 0 &&
             txbeg + (jacc ? JOIN_GUARD_osticks : TXRX_GUARD_osticks) - rxtime > 0 ) {
+            rs232_print(RS232_PORT_0, "4.\r\n");
             // Not enough time to complete TX-RX before beacon - postpone after beacon.
             // In order to avoid clustering of postponed TX right after beacon randomize start!
             txDelay(rxtime + BCN_RESERVE_osticks, 16);
@@ -1834,6 +1963,7 @@ static void engineUpdate (void) {
             goto checkrx;
         }
 		#endif
+
         // Earliest possible time vs overhead to setup radio
         if( txbeg - (now + TX_RAMPUP) < 0 ) {
             // We could send right now!
@@ -1883,6 +2013,24 @@ static void engineUpdate (void) {
             return;
         }
         rs232_print(RS232_PORT_0, "txbeg was too big!\r\n");
+
+        char buf1[20];
+        sprintf(buf1, "%lu", txbeg);
+        rs232_print(RS232_PORT_0, "txbeg: ");
+        rs232_print(RS232_PORT_0, (char *) buf1);
+        rs232_print(RS232_PORT_0, "\r\n");
+
+        char buf2[20];
+        sprintf(buf2, "%lu", now);
+        rs232_print(RS232_PORT_0, "now: ");
+        rs232_print(RS232_PORT_0, (char *) buf2);
+        rs232_print(RS232_PORT_0, "\r\n");
+
+        char buf3[20];
+        sprintf(buf3, "%lu", TX_RAMPUP);
+        rs232_print(RS232_PORT_0, "rampup time: ");
+        rs232_print(RS232_PORT_0, (char *) buf3);
+        rs232_print(RS232_PORT_0, "\r\n");
         // Cannot yet TX
         if( (LMIC.opmode & OP_TRACK) == 0 )
             goto txdelay; // We don't track the beacon - nothing else to do - so wait for the time to TX

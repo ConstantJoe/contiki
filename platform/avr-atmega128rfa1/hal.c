@@ -92,20 +92,45 @@ extern void radio_irq_handler(u1_t dio);
 // the Pin Change Interrupt PCI0 will trigger if any enabled PCINT7:0 pin toggles
 // so inside the interrupt we figure out which pin made it fire
 ISR(PCINT0_vect)
-{
+{	
+	//rs232_print(RS232_PORT_0, "Interrupt!\r\n");
+	//routine doesn't care which pin it came from
+	radio_irq_handler(0);
+	/*char buf[20];
+   	sprintf(buf, "%u", PINB);
+   	rs232_print(RS232_PORT_0, "PINB: ");
+   	rs232_print(RS232_PORT_0, (char *) buf);
+	rs232_print(RS232_PORT_0, "\r\n");
+
+	char buf2[20];
+   	sprintf(buf2, "%u", (1 << PIN_DIO0));
+   	rs232_print(RS232_PORT_0, "PIN_DIO0: ");
+   	rs232_print(RS232_PORT_0, (char *) buf2);
+	rs232_print(RS232_PORT_0, "\r\n");
+
+	char buf3[20];
+   	sprintf(buf3, "%u", (1 << PIN_DIO1));
+   	rs232_print(RS232_PORT_0, "PIN_DIO1: ");
+   	rs232_print(RS232_PORT_0, (char *) buf3);
+	rs232_print(RS232_PORT_0, "\r\n");
+
 	rs232_print(RS232_PORT_0, "Interrupt!\r\n");
 	u1_t changed_bits;
 
 	changed_bits = PINB ^ port_b_old;
     port_b_old = PINB;
 
+    rs232_print(RS232_PORT_0, "Fiddled with port B !\r\n");
+
     if(changed_bits & (1 << PIN_DIO0)){
+    	rs232_print(RS232_PORT_0, "PIO0!\r\n");
 		radio_irq_handler(0);	
 	}
 
 	if(changed_bits & (1 << PIN_DIO1)){
+		rs232_print(RS232_PORT_0, "PIO1!\r\n");
 		radio_irq_handler(1);
-	}
+	}*/
 }
 
 
@@ -137,13 +162,40 @@ void hal_waitUntil (u4_t time)
 	sei();
 
 	char buf[20];
+	
+
+
+	rs232_print(RS232_PORT_0, "Time target is  ");
 	sprintf(buf, "%lu", time);
-	rs232_print(RS232_PORT_0, "Wait for ");
 	rs232_print(RS232_PORT_0, (char *) buf);
 	rs232_print(RS232_PORT_0, " ticks\r\n");
-	clock_wait(time); //TODO: some of the timer tick calculations that call this function are based on much smaller ticks
+	
+	u4_t ctime = hal_ticks();
+	rs232_print(RS232_PORT_0, "Current time is ");
+    char buf2[20];
+    sprintf(buf2, "%lu", ctime);
+    rs232_print(RS232_PORT_0, (char *)buf2);
+    rs232_print(RS232_PORT_0, " ticks.\r\n");
+
+    u4_t t;
+    if(ctime > time){
+       t = 0;
+    } else{
+       t = time - ctime;
+    }
+
+    rs232_print(RS232_PORT_0, "So wait time is ");
+    char buf3[20];
+    sprintf(buf3, "%lu", t);
+    rs232_print(RS232_PORT_0, (char *)buf3);
+    rs232_print(RS232_PORT_0, " ticks.\r\n");
+	clock_wait(t);
 }
-  
+
+void hal_wait (u4_t time){
+	//sei();
+	clock_wait(time);
+}  
 
 // -----------------------------------------------------------------------------
 // IRQ

@@ -55,7 +55,8 @@
  * clock_time_t.
  */
  /* Clock ticks per second */
-#define CLOCK_CONF_SECOND 128
+//#define CLOCK_CONF_SECOND 128
+#define CLOCK_CONF_SECOND 10000
 
 typedef uint32_t clock_time_t;
 #define CLOCK_LT(a,b)  ((int32_t)((a)-(b)) < 0)
