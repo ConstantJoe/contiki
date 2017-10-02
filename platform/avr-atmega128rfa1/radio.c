@@ -302,8 +302,9 @@ static void printData(u1_t d, u1_t dir){
 static void writeReg (u1_t addr, u1_t data ) {
     hal_pin_nss(0);
     
+    //TODO: make sure 0x80 and 0x7F are correct. What did Maxime do?
     hal_spi(addr | 0x80);
-    printData(addr | 0x80, 0);
+    printData(addr, 0);
     /*data_holder[data_ctr] = addr | 0x80;
     direction[data_ctr] = 0;
     data_ctr++;
@@ -322,7 +323,7 @@ static void writeReg (u1_t addr, u1_t data ) {
 static u1_t readReg (u1_t addr) {
     hal_pin_nss(0);
     hal_spi(addr & 0x7F);
-    printData(addr & 0x7F, 0);
+    printData(addr, 0);
     /*data_holder[data_ctr] = addr & 0x7F;
     direction[data_ctr] = 0;
     data_ctr++;
@@ -342,7 +343,7 @@ static u1_t readReg (u1_t addr) {
 static void writeBuf (u1_t addr, xref2u1_t buf, u1_t len) {
     hal_pin_nss(0);
     hal_spi(addr | 0x80);
-    printData(addr | 0x80, 0);
+    printData(addr, 0);
     /*data_holder[data_ctr] = addr | 0x80;
     direction[data_ctr] = 0;
     data_ctr++;
@@ -363,7 +364,7 @@ static void writeBuf (u1_t addr, xref2u1_t buf, u1_t len) {
 static void readBuf (u1_t addr, xref2u1_t buf, u1_t len) {
     hal_pin_nss(0);
     hal_spi(addr & 0x7F);
-    printData(addr & 0x7F, 0);
+    printData(addr, 0);
     /*data_holder[data_ctr] = addr & 0x7F;
     direction[data_ctr] = 0;
     data_ctr++;
