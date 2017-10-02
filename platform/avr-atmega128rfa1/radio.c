@@ -263,18 +263,78 @@ char dest[20];
 #error Missing CFG_sx1272_radio/CFG_sx1276_radio
 #endif
 
+u1_t data_holder[255];
+u1_t direction[255]; //0 for output, 1 for input
+
+u1_t data_ctr = 0;
+
+static void printDataHolder(){
+    rs232_print(RS232_PORT_0, "Data holder full, printing:\r\n");
+
+    char buf1[5], buf2[5];
+    int x;
+
+    for(x=0; x<255; x++){
+        sprintf(buf1, "%x", data_holder[x]);
+        sprintf(buf2, "%x", direction[x]);
+
+        rs232_print(RS232_PORT_0, (char *) buf1);
+        rs232_print(RS232_PORT_0, " ");
+        rs232_print(RS232_PORT_0, (char *) buf2);
+        rs232_print(RS232_PORT_0, "\r\n");
+    }
+
+    data_ctr = 0;
+}
+
+static void printData(u1_t d, u1_t dir){
+    char buf1[5], buf2[5];
+    
+    sprintf(buf1, "%x", d);
+    sprintf(buf2, "%x", dir);
+
+    rs232_print(RS232_PORT_0, (char *) buf1);
+    rs232_print(RS232_PORT_0, " ");
+    rs232_print(RS232_PORT_0, (char *) buf2);
+    rs232_print(RS232_PORT_0, "\r\n");
+}
 
 static void writeReg (u1_t addr, u1_t data ) {
     hal_pin_nss(0);
+    
     hal_spi(addr | 0x80);
+    printData(addr | 0x80, 0);
+    /*data_holder[data_ctr] = addr | 0x80;
+    direction[data_ctr] = 0;
+    data_ctr++;
+    if(data_ctr == 255) printDataHolder();*/
+    
     hal_spi(data);
+    printData(data, 0);
+    /*data_holder[data_ctr] = data;
+    direction[data_ctr] = 0;
+    data_ctr++;
+    if(data_ctr == 255) printDataHolder();*/
+
     hal_pin_nss(1);
 }
 
 static u1_t readReg (u1_t addr) {
     hal_pin_nss(0);
     hal_spi(addr & 0x7F);
+    printData(addr & 0x7F, 0);
+    /*data_holder[data_ctr] = addr & 0x7F;
+    direction[data_ctr] = 0;
+    data_ctr++;
+    if(data_ctr == 255) printDataHolder();*/
+    
     u1_t val = hal_spi(0x00);
+    printData(val, 1);
+    /*data_holder[data_ctr] = val;
+    direction[data_ctr] = 1;
+    data_ctr++;
+    if(data_ctr == 255) printDataHolder();*/
+
     hal_pin_nss(1);
     return val;
 }
@@ -282,9 +342,20 @@ static u1_t readReg (u1_t addr) {
 static void writeBuf (u1_t addr, xref2u1_t buf, u1_t len) {
     hal_pin_nss(0);
     hal_spi(addr | 0x80);
+    printData(addr | 0x80, 0);
+    /*data_holder[data_ctr] = addr | 0x80;
+    direction[data_ctr] = 0;
+    data_ctr++;
+    if(data_ctr == 255) printDataHolder();*/
+
     u1_t i;
     for (i=0; i<len; i++) {
         hal_spi(buf[i]);
+        printData(buf[i], 0);
+        /*data_holder[data_ctr] = buf[i];
+        direction[data_ctr] = 0;
+        data_ctr++;
+        if(data_ctr == 255) printDataHolder();*/
     }
     hal_pin_nss(1);
 }
@@ -292,9 +363,20 @@ static void writeBuf (u1_t addr, xref2u1_t buf, u1_t len) {
 static void readBuf (u1_t addr, xref2u1_t buf, u1_t len) {
     hal_pin_nss(0);
     hal_spi(addr & 0x7F);
+    printData(addr & 0x7F, 0);
+    /*data_holder[data_ctr] = addr & 0x7F;
+    direction[data_ctr] = 0;
+    data_ctr++;
+    if(data_ctr == 255) printDataHolder();*/
+
     u1_t i;
     for (i=0; i<len; i++) {
         buf[i] = hal_spi(0x00);
+        printData(buf[i], 1);
+        /*data_holder[data_ctr] = buf[i];
+        direction[data_ctr] = 1;
+        data_ctr++;
+        if(data_ctr == 255) printDataHolder();*/
     }
     hal_pin_nss(1);
 }
