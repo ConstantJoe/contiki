@@ -598,6 +598,20 @@ static void txlora () {
     // now we actually start the transmission
     opmode(OPMODE_TX);
 
+    writeReg(RegOpMode, 0x83);
+
+    readReg(RegOpMode); //ensure that it properly went into TX mode
+    writeReg(RegOpMode, 0x83);
+    readReg(RegOpMode);
+    writeReg(RegOpMode, 0x83);
+    readReg(RegOpMode);
+    writeReg(RegOpMode, 0x83);
+    readReg(RegOpMode);
+    writeReg(RegOpMode, 0x83);
+    readReg(RegOpMode);
+
+    readReg(LORARegHopChannel);
+
     rs232_print(RS232_PORT_0, "Finish txlora:\r\n");
 }
 
@@ -624,7 +638,7 @@ static const u1_t rxlorairqmask[] = {
 // start LoRa receiver (time=LMIC.rxtime, timeout=LMIC.rxsyms, result=LMIC.frame[LMIC.dataLen])
 static void rxlora (u1_t rxmode) {
     // select LoRa modem (from sleep mode)
-    //rs232_print(RS232_PORT_0, "In rxlora!\r\n");
+    rs232_print(RS232_PORT_0, "In rxlora!\r\n");
     opmodeLora();
 
     ASSERT((readReg(RegOpMode) & OPMODE_LORA) != 0);
