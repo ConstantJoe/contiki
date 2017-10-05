@@ -154,7 +154,7 @@ enum {
     OFF_JR_HDR      = 0,
     OFF_JR_ARTEUI   = 1,
     OFF_JR_DEVEUI   = 9,
-    OFF_JR_DEVNONCE = 17,
+    OFF_JR_DEVNONCE = 17, 
     OFF_JR_MIC      = 19,
     LEN_JR          = 23
 };

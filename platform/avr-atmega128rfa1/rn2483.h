@@ -56,3 +56,4 @@ unsigned int hexFormArrayCheck(char* data)
 	return 1;
 }
 
+PROCESS_NAME(rn2483_event_handler);

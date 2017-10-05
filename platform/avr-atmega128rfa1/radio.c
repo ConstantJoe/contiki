@@ -268,7 +268,7 @@ u1_t direction[255]; //0 for output, 1 for input
 
 u1_t data_ctr = 0;
 
-static void printDataHolder(){
+/*static void printDataHolder(){
     rs232_print(RS232_PORT_0, "Data holder full, printing:\r\n");
 
     char buf1[5], buf2[5];
@@ -285,7 +285,7 @@ static void printDataHolder(){
     }
 
     data_ctr = 0;
-}
+}*/
 
 static void printData(u1_t d, u1_t dir){
     char buf1[5], buf2[5];
@@ -302,20 +302,12 @@ static void printData(u1_t d, u1_t dir){
 static void writeReg (u1_t addr, u1_t data ) {
     hal_pin_nss(0);
     
-    //TODO: make sure 0x80 and 0x7F are correct. What did Maxime do?
     hal_spi(addr | 0x80);
-    printData(addr, 0);
-    /*data_holder[data_ctr] = addr | 0x80;
-    direction[data_ctr] = 0;
-    data_ctr++;
-    if(data_ctr == 255) printDataHolder();*/
+    //printData(addr, 0);
     
     hal_spi(data);
-    printData(data, 0);
-    /*data_holder[data_ctr] = data;
-    direction[data_ctr] = 0;
-    data_ctr++;
-    if(data_ctr == 255) printDataHolder();*/
+    //printData(data, 0);
+    
 
     hal_pin_nss(1);
 }
@@ -323,18 +315,10 @@ static void writeReg (u1_t addr, u1_t data ) {
 static u1_t readReg (u1_t addr) {
     hal_pin_nss(0);
     hal_spi(addr & 0x7F);
-    printData(addr, 0);
-    /*data_holder[data_ctr] = addr & 0x7F;
-    direction[data_ctr] = 0;
-    data_ctr++;
-    if(data_ctr == 255) printDataHolder();*/
+   // printData(addr, 0);
     
     u1_t val = hal_spi(0x00);
-    printData(val, 1);
-    /*data_holder[data_ctr] = val;
-    direction[data_ctr] = 1;
-    data_ctr++;
-    if(data_ctr == 255) printDataHolder();*/
+    //printData(val, 1);
 
     hal_pin_nss(1);
     return val;
@@ -343,20 +327,12 @@ static u1_t readReg (u1_t addr) {
 static void writeBuf (u1_t addr, xref2u1_t buf, u1_t len) {
     hal_pin_nss(0);
     hal_spi(addr | 0x80);
-    printData(addr, 0);
-    /*data_holder[data_ctr] = addr | 0x80;
-    direction[data_ctr] = 0;
-    data_ctr++;
-    if(data_ctr == 255) printDataHolder();*/
+    //printData(addr, 0);
 
     u1_t i;
     for (i=0; i<len; i++) {
         hal_spi(buf[i]);
-        printData(buf[i], 0);
-        /*data_holder[data_ctr] = buf[i];
-        direction[data_ctr] = 0;
-        data_ctr++;
-        if(data_ctr == 255) printDataHolder();*/
+        //printData(buf[i], 0);
     }
     hal_pin_nss(1);
 }
@@ -364,20 +340,12 @@ static void writeBuf (u1_t addr, xref2u1_t buf, u1_t len) {
 static void readBuf (u1_t addr, xref2u1_t buf, u1_t len) {
     hal_pin_nss(0);
     hal_spi(addr & 0x7F);
-    printData(addr, 0);
-    /*data_holder[data_ctr] = addr & 0x7F;
-    direction[data_ctr] = 0;
-    data_ctr++;
-    if(data_ctr == 255) printDataHolder();*/
+    //printData(addr, 0);
 
     u1_t i;
     for (i=0; i<len; i++) {
         buf[i] = hal_spi(0x00);
-        printData(buf[i], 1);
-        /*data_holder[data_ctr] = buf[i];
-        direction[data_ctr] = 1;
-        data_ctr++;
-        if(data_ctr == 255) printDataHolder();*/
+        //printData(buf[i], 1);
     }
     hal_pin_nss(1);
 }
@@ -501,12 +469,18 @@ static void configPower () {
 #elif CFG_sx1272_radio
     // set PA config (2-17 dBm using PA_BOOST)
     s1_t pw = (s1_t)LMIC.txpow;
+    //rs232_print(RS232_PORT_0, "required pw: ");
+    char buf[5];
+    sprintf(buf, "%d", pw);
+    //rs232_print(RS232_PORT_0, (char *) buf);
+    //rs232_print(RS232_PORT_0, "\r\n");
     if(pw > 17) {
         pw = 17;
     } else if(pw < 2) {
         pw = 2;
     }
-    writeReg(RegPaConfig, (u1_t)(0x80|(pw-2)));
+    //writeReg(RegPaConfig, (u1_t)(0x80|(pw-2)));
+    writeReg(RegPaConfig, (u1_t)(pw-2)); //NOTE: changed here to specifically not use PA_BOOST - there is a problem with the supply voltage
 #else
 #error Missing CFG_sx1272_radio/CFG_sx1276_radio
 #endif /* CFG_sx1272_radio */
@@ -558,7 +532,7 @@ static void txfsk () {
 static void txlora () {
     // select LoRa modem (from sleep mode)
     //writeReg(RegOpMode, OPMODE_LORA);
-    rs232_print(RS232_PORT_0, "Begin txlora:\r\n");
+    //rs232_print(RS232_PORT_0, "Begin txlora:\r\n");
 
     opmodeLora();
     
@@ -592,6 +566,8 @@ static void txlora () {
     // download buffer to the radio FIFO
     writeBuf(RegFifo, LMIC.frame, LMIC.dataLen);
 
+
+
     // enable antenna switch for TX
     hal_pin_rxtx(1);
     
@@ -612,7 +588,7 @@ static void txlora () {
 
     readReg(LORARegHopChannel);
 
-    rs232_print(RS232_PORT_0, "Finish txlora:\r\n");
+    //rs232_print(RS232_PORT_0, "Finish txlora:\r\n");
 }
 
 // start transmitter (buf=LMIC.frame, len=LMIC.dataLen)
@@ -638,7 +614,7 @@ static const u1_t rxlorairqmask[] = {
 // start LoRa receiver (time=LMIC.rxtime, timeout=LMIC.rxsyms, result=LMIC.frame[LMIC.dataLen])
 static void rxlora (u1_t rxmode) {
     // select LoRa modem (from sleep mode)
-    rs232_print(RS232_PORT_0, "In rxlora!\r\n");
+    //rs232_print(RS232_PORT_0, "In rxlora!\r\n");
     opmodeLora();
 
     ASSERT((readReg(RegOpMode) & OPMODE_LORA) != 0);
@@ -694,7 +670,7 @@ static void rxlora (u1_t rxmode) {
         char buf3[20];
         sprintf(buf3, "%lu", os_getTime());
 
-        rs232_print(RS232_PORT_0, "Wait for: ");
+        /*rs232_print(RS232_PORT_0, "Wait for: ");
         rs232_print(RS232_PORT_0, (char *) buf1);
         rs232_print(RS232_PORT_0, "\r\n");
 
@@ -704,18 +680,18 @@ static void rxlora (u1_t rxmode) {
 
         rs232_print(RS232_PORT_0, "minus: ");
         rs232_print(RS232_PORT_0, (char *) buf3);
-        rs232_print(RS232_PORT_0, "\r\n");
+        rs232_print(RS232_PORT_0, "\r\n");*/
         hal_enableIRQs();
         hal_wait(LMIC.rxtime - os_getTime()); //TODO: here's the problem
         hal_disableIRQs();
-        rs232_print(RS232_PORT_0, "In rxlora! 1.5.2\r\n");
+        //rs232_print(RS232_PORT_0, "In rxlora! 1.5.2\r\n");
         opmode(OPMODE_RX_SINGLE);
     } else { // continous rx (scan or rssi)
-        rs232_print(RS232_PORT_0, "In rxlora! 1.5.3\r\n");
+        //rs232_print(RS232_PORT_0, "In rxlora! 1.5.3\r\n");
         opmode(OPMODE_RX); 
-        rs232_print(RS232_PORT_0, "In rxlora! 1.5.4\r\n");
+        //rs232_print(RS232_PORT_0, "In rxlora! 1.5.4\r\n");
     }
-    rs232_print(RS232_PORT_0, "Leave rxlora!\r\n");
+    //rs232_print(RS232_PORT_0, "Leave rxlora!\r\n");
 }
 
 static void rxfsk (u1_t rxmode) {
@@ -783,16 +759,17 @@ static void startrx (u1_t rxmode) {
 
 // get random seed from wideband noise rssi
 void radio_init () {
-    rs232_print(RS232_PORT_0, "1!\r\n");
+    //TODO: ensure RESET pin is not needed.    
+    /*rs232_print(RS232_PORT_0, "1!\r\n");
     hal_disableIRQs();
-    rs232_print(RS232_PORT_0, "1.1!\r\n");
+    rs232_print(RS232_PORT_0, "1.1!\r\n");*/
 
     // manually reset radio
-#ifdef CFG_sx1276_radio
+/*#ifdef CFG_sx1276_radio
     hal_pin_rst(0); // drive RST pin low
 #else
     hal_pin_rst(1); // drive RST pin high
-#endif
+#endif*/
     //rs232_print(RS232_PORT_0, "1\r\n");
 
 
@@ -810,16 +787,16 @@ void radio_init () {
     rs232_print(RS232_PORT_0, "\r\n");    */
 
     //wait requires use of IRQs
-    hal_enableIRQs();
-    rs232_print(RS232_PORT_0, "2!\r\n");
-    hal_wait(ms2osticks(1));
-    hal_disableIRQs();
+    //hal_enableIRQs();
+    //rs232_print(RS232_PORT_0, "2!\r\n");
+   // hal_wait(ms2osticks(1));
+    //hal_disableIRQs();
     //hal_waitUntil(os_getTime()+ms2osticks(1)); // wait >100us
-    hal_pin_rst(2); // configure RST pin floating!
+   // hal_pin_rst(2); // configure RST pin floating!
     //hal_waitUntil(os_getTime()+ms2osticks(5)); // wait 5ms
-    hal_enableIRQs();
-    rs232_print(RS232_PORT_0, "3!\r\n");
-    hal_wait(ms2osticks(5));
+   // hal_enableIRQs();
+    //rs232_print(RS232_PORT_0, "3!\r\n");
+   // hal_wait(ms2osticks(5));
     hal_disableIRQs();
 
     opmode(OPMODE_SLEEP);

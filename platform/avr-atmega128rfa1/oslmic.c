@@ -82,9 +82,9 @@ void os_setTimedCallback (osjob_t* job, ostime_t time, osjobcb_t cb) {
         if(ctimer_expired(&c_timers[i])){
             ostime_t ctime = os_getTime();
 
-            rs232_print(RS232_PORT_0, "Set one.\r\n");
-            rs232_print(RS232_PORT_0, "Time target is ");
-            char buf[20];
+            //rs232_print(RS232_PORT_0, "Set one.\r\n");
+            //rs232_print(RS232_PORT_0, "Time target is ");
+            /*char buf[20];
             sprintf(buf, "%lu", time);
             rs232_print(RS232_PORT_0, (char *)buf);
             rs232_print(RS232_PORT_0, " ticks.\r\n");
@@ -94,7 +94,7 @@ void os_setTimedCallback (osjob_t* job, ostime_t time, osjobcb_t cb) {
             sprintf(buf2, "%lu", ctime);
             rs232_print(RS232_PORT_0, (char *)buf2);
             rs232_print(RS232_PORT_0, " ticks.\r\n");
-
+*/
             
 
             ostime_t t;
@@ -104,18 +104,18 @@ void os_setTimedCallback (osjob_t* job, ostime_t time, osjobcb_t cb) {
                 t = time - ctime;
             }
 
-            rs232_print(RS232_PORT_0, "So we should wait for ");
+            /*rs232_print(RS232_PORT_0, "So we should wait for ");
             char buf3[20];
             sprintf(buf3, "%lu", t);
             rs232_print(RS232_PORT_0, (char *)buf3);
-            rs232_print(RS232_PORT_0, " ticks.\r\n");
+            rs232_print(RS232_PORT_0, " ticks.\r\n");*/
             
             ctimer_set(&c_timers[i], t, (void (*)(void *)) cb, job);
             return;
         }
     }
 
-    rs232_print(RS232_PORT_0, "All timers are currently used.\r\n");
+    //rs232_print(RS232_PORT_0, "All timers are currently used.\r\n");
     //ctimer_set(&c_timer, time, (void (*)(void *)) cb, job);
 
     //TODO: add a pool of timers 

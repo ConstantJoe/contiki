@@ -161,21 +161,21 @@ void hal_waitUntil (u4_t time)
 	//TODO: Sometimes crashes here
 	sei();
 
-	char buf[20];
+	//char buf[20];
 	
+	u4_t ctime = hal_ticks();
 
-
-	rs232_print(RS232_PORT_0, "Time target is  ");
+	/*rs232_print(RS232_PORT_0, "Time target is  ");
 	sprintf(buf, "%lu", time);
 	rs232_print(RS232_PORT_0, (char *) buf);
 	rs232_print(RS232_PORT_0, " ticks\r\n");
 	
-	u4_t ctime = hal_ticks();
+	
 	rs232_print(RS232_PORT_0, "Current time is ");
     char buf2[20];
     sprintf(buf2, "%lu", ctime);
     rs232_print(RS232_PORT_0, (char *)buf2);
-    rs232_print(RS232_PORT_0, " ticks.\r\n");
+    rs232_print(RS232_PORT_0, " ticks.\r\n");*/
 
     u4_t t;
     if(ctime > time){
@@ -184,11 +184,11 @@ void hal_waitUntil (u4_t time)
        t = time - ctime;
     }
 
-    rs232_print(RS232_PORT_0, "So wait time is ");
+    /*rs232_print(RS232_PORT_0, "So wait time is ");
     char buf3[20];
     sprintf(buf3, "%lu", t);
     rs232_print(RS232_PORT_0, (char *)buf3);
-    rs232_print(RS232_PORT_0, " ticks.\r\n");
+    rs232_print(RS232_PORT_0, " ticks.\r\n");*/
 	clock_wait(t);
 }
 

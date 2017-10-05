@@ -30,6 +30,11 @@ unsigned int mac_reset(unsigned int band)
 
     	rs232_print(RS232_PORT_1, result);
 
+    	//TODO: set func name mac_reset_response as saved variable to be run when the process is brought back with the serial_line_event_message_1 event
+    	//For passing func names as parameters, see LMIC for inspiration
+    	//Then repeat this for all  
+    	//poll 
+
     	return 1;
 	}
 	else
