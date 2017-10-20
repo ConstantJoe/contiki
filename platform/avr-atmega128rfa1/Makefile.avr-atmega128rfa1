@@ -4,7 +4,7 @@ CONTIKI_CORE=contiki-main
 CONTIKI_TARGET_MAIN = ${CONTIKI_CORE}.o
 CONTIKI_TARGET_SOURCEFILES += contiki-main.c params.c
 #Needed for slip
-CONTIKI_TARGET_SOURCEFILES += button-sensor.c sensors.c slip_uart0.c slip.c lmic.c hal.c oslmic.c radio.c aes.c
+CONTIKI_TARGET_SOURCEFILES += button-sensor.c sensors.c slip_uart0.c slip.c lmic.c hal.c oslmic.c radio.c aes.c openpana_aes.c openpana_cmac.c
 #Needed for dual uart0 and rn2483
 CONTIKI_TARGET_SOURCEFILES += serial-line-dual.c rn2483_mac.c
 

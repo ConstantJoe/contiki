@@ -10,6 +10,7 @@
  *******************************************************************************/
 
 #include "oslmic.h"
+#include "dev/rs232.h"
 
 #define AES_MICSUB 0x30 // internal use only
 
@@ -228,8 +229,10 @@ static void aesroundkeys () {
 }
 
 u4_t os_aes (u1_t mode, xref2u1_t buf, u2_t len) {
-        
+
         aesroundkeys();
+
+
 
         if( mode & AES_MICNOAUX ) {
             AESAUX[0] = AESAUX[1] = AESAUX[2] = AESAUX[3] = 0;
@@ -362,6 +365,7 @@ u4_t os_aes (u1_t mode, xref2u1_t buf, u2_t len) {
             }
             mode |= AES_MICNOAUX;
         }
+
         return AESAUX[0];
 }
 

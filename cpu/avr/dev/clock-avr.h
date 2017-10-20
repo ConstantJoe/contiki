@@ -50,7 +50,7 @@
    * pre-scale factor is 1024, we want CLOCK_CONF_SECOND ticks / sec: \
    * F_CPU = 1024 * CLOCK_CONF_SECOND * OCR0A, less 1 for CTC mode \
    */ \
-  OCR0A = F_CPU/256UL/CLOCK_CONF_SECOND/2 - 1; \
+  OCR0A = F_CPU/256UL/CLOCK_CONF_SECOND - 1; \
 \
   /* 								\
    * Set timer control register: 	\

@@ -10,6 +10,7 @@
  *******************************************************************************/
 
 #include <stdio.h>
+#include <stdlib.h>
 #include "lmic.h"
 
 #include "dev/rs232.h"
@@ -562,7 +563,18 @@ static void txlora () {
     writeReg(LORARegFifoTxBaseAddr, 0x00);
     writeReg(LORARegFifoAddrPtr, 0x00);
     writeReg(LORARegPayloadLength, LMIC.dataLen);
-       
+    
+    rs232_print(RS232_PORT_0, "Contents of LMIC.frame: ");
+    char buf2[5];
+    int i;
+    for (i=0; i<LMIC.dataLen; i++) {
+        sprintf(buf2, "%02x", LMIC.frame[i]);
+        rs232_print(RS232_PORT_0, (char *) buf2);
+        //printData(buf[i], 0);
+    }
+    rs232_print(RS232_PORT_0, "\r\n");
+    
+
     // download buffer to the radio FIFO
     writeBuf(RegFifo, LMIC.frame, LMIC.dataLen);
 
@@ -759,49 +771,12 @@ static void startrx (u1_t rxmode) {
 
 // get random seed from wideband noise rssi
 void radio_init () {
-    //TODO: ensure RESET pin is not needed.    
-    /*rs232_print(RS232_PORT_0, "1!\r\n");
-    hal_disableIRQs();
-    rs232_print(RS232_PORT_0, "1.1!\r\n");*/
 
-    // manually reset radio
-/*#ifdef CFG_sx1276_radio
-    hal_pin_rst(0); // drive RST pin low
-#else
-    hal_pin_rst(1); // drive RST pin high
-#endif*/
-    //rs232_print(RS232_PORT_0, "1\r\n");
-
-
-    /*char buf[20];
-    sprintf(buf, "%lu", ms2osticks(1));
-
-    char buf2[20];
-    sprintf(buf2, "%lu", os_getTime());*/
-
-    /*rs232_print(RS232_PORT_0, "os time: ");
-    rs232_print(RS232_PORT_0, (char *) buf2);
-    rs232_print(RS232_PORT_0, "\r\n");
-    rs232_print(RS232_PORT_0, "ms2osticks ");
-    rs232_print(RS232_PORT_0, (char *) buf);
-    rs232_print(RS232_PORT_0, "\r\n");    */
-
-    //wait requires use of IRQs
-    //hal_enableIRQs();
-    //rs232_print(RS232_PORT_0, "2!\r\n");
-   // hal_wait(ms2osticks(1));
-    //hal_disableIRQs();
-    //hal_waitUntil(os_getTime()+ms2osticks(1)); // wait >100us
-   // hal_pin_rst(2); // configure RST pin floating!
-    //hal_waitUntil(os_getTime()+ms2osticks(5)); // wait 5ms
-   // hal_enableIRQs();
-    //rs232_print(RS232_PORT_0, "3!\r\n");
-   // hal_wait(ms2osticks(5));
+    rs232_print(RS232_PORT_0, "1\r\n");
     hal_disableIRQs();
 
     opmode(OPMODE_SLEEP);
 
-    //rs232_print(RS232_PORT_0, "2\r\n");
     // some sanity checks, e.g., read version number
     u1_t v = readReg(RegVersion);
 #ifdef CFG_sx1276_radio
@@ -812,13 +787,20 @@ void radio_init () {
 #error Missing CFG_sx1272_radio/CFG_sx1276_radio
 #endif
 
+    rs232_print(RS232_PORT_0, "2\r\n");
+
+    //Not using randbuf now
     // seed 15-byte randomness via noise rssi
-    rxlora(RXMODE_RSSI);
+    //rxlora(RXMODE_RSSI);
+
+    rs232_print(RS232_PORT_0, "3\r\n");
 
     //rs232_print(RS232_PORT_0, "3\r\n");
-    while( (readReg(RegOpMode) & OPMODE_MASK) != OPMODE_RX ); // continuous rx
+    //while( (readReg(RegOpMode) & OPMODE_MASK) != OPMODE_RX ); // continuous rx
 
-    int i, j;
+    rs232_print(RS232_PORT_0, "4\r\n");
+
+    /*int i, j;
     for(i=1; i<16; i++) {
         for(j=0; j<8; j++) {
             u1_t b; // wait for two non-identical subsequent least-significant bits
@@ -827,6 +809,9 @@ void radio_init () {
         }
     }
     randbuf[0] = 16; // set initial index
+
+
+    rs232_print(RS232_PORT_0, "3\r\n");*/
 
 #ifdef CFG_sx1276_radio	//CFG_sx1276mb1_board
     // chain calibration
@@ -855,7 +840,10 @@ void radio_init () {
 // return next random byte derived from seed buffer
 // (buf[0] holds index of next byte to be returned)
 u1_t radio_rand1 () {
-    u1_t i = randbuf[0];
+    //for some reason this only ever gives the same two random numbers - 2dff and d200
+    //changing it to use general avr rand function
+
+    /*u1_t i = randbuf[0];
     ASSERT( i != 0 );
     if( i==16 ) {
         os_aes(AES_ENC, randbuf, 16); // encrypt seed with any key
@@ -863,6 +851,11 @@ u1_t radio_rand1 () {
     }
     u1_t v = randbuf[i++];
     randbuf[0] = i;
+    return v;*/
+
+    int r = rand() % 255; // not actually that random, but random enough for our purposes (I think - is this function used in the crypto??)
+    u1_t v = (u1_t) r; 
+
     return v;
 }
 

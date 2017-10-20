@@ -96,12 +96,38 @@ void os_wlsbf4 (xref2u1_t buf, u4_t v) {
 }
 #endif
 
+#if !defined(os_wmsbf2)
+void os_wmsbf2 (xref2u1_t buf, u2_t v) {
+    buf[1] = v;
+    buf[0] = v>>8;
+}
+#endif
+
 #if !defined(os_wmsbf4)
 void os_wmsbf4 (xref2u1_t buf, u4_t v) {
+    char bufe[10];
+    
     buf[3] = v;
     buf[2] = v>>8;
     buf[1] = v>>16;
     buf[0] = v>>24;
+
+    sprintf(bufe, "%02x", buf[3]);
+    rs232_print(RS232_PORT_0, "Writing os_wsmbf4: ");
+    rs232_print(RS232_PORT_0, (char *) bufe);
+    rs232_print(RS232_PORT_0, "\r\n");
+    sprintf(bufe, "%02x", buf[2]);
+    rs232_print(RS232_PORT_0, "Writing os_wsmbf4: ");
+    rs232_print(RS232_PORT_0, (char *) bufe);
+    rs232_print(RS232_PORT_0, "\r\n");
+    sprintf(bufe, "%02x", buf[1]);
+    rs232_print(RS232_PORT_0, "Writing os_wsmbf4: ");
+    rs232_print(RS232_PORT_0, (char *) bufe);
+    rs232_print(RS232_PORT_0, "\r\n");
+    sprintf(bufe, "%02x", buf[0]);
+    rs232_print(RS232_PORT_0, "Writing os_wsmbf4: ");
+    rs232_print(RS232_PORT_0, (char *) bufe);
+    rs232_print(RS232_PORT_0, "\r\n");
 }
 #endif
 
@@ -164,14 +190,25 @@ static void aes_appendMic (xref2cu1_t key, u4_t devaddr, u4_t seqno, int dndir, 
 }
 
 
+
 static void aes_appendMic0 (xref2u1_t pdu, int len) {
     os_getDevKey(AESkey);
-    os_wmsbf4(pdu+len, os_aes(AES_MIC|AES_MICNOAUX, pdu, len));  // MSB because of internal structure of AES
+    
+    // The original AES seems to be completely wrong? Cant find the bug in it but it never works. Replacing with AES_CMAC from OpenPana
+    unsigned char result[16];
+    AES_CMAC ( AESkey, (unsigned char *) pdu, len, result );
+
+    xref2u1_t b = pdu+len;
+    int i;
+    for(i=0;i<4;i++){
+        b[i] = result[i];
+    }
 }
 
 
 static int aes_verifyMic0 (xref2u1_t pdu, int len) {
     os_getDevKey(AESkey);
+
     return os_aes(AES_MIC|AES_MICNOAUX, pdu, len) == os_rmsbf4(pdu+len);
 }
 
@@ -1285,14 +1322,14 @@ static void setupRx1 (osjobcb_t func) {
 
 // Called by HAL once TX complete and delivers exact end of TX time stamp in LMIC.rxtime
 static void txDone (ostime_t delay, osjobcb_t func) {
-    /*rs232_print(RS232_PORT_0, "in tx done!\r\n");
+    rs232_print(RS232_PORT_0, "in tx done!\r\n");
 
     char buf[20];
 	sprintf(buf, "%lu", delay);
 
     rs232_print(RS232_PORT_0, "delay required:\r\n");
     rs232_print(RS232_PORT_0, (char *) buf);
-    rs232_print(RS232_PORT_0, "\r\n");*/
+    rs232_print(RS232_PORT_0, "\r\n");
     #if defined CLASS_B
     if( (LMIC.opmode & (OP_TRACK|OP_PINGABLE|OP_PINGINI)) == (OP_TRACK|OP_PINGABLE) ) {
         rxschedInit(&LMIC.ping);    // note: reuses LMIC.frame buffer!
@@ -1483,7 +1520,7 @@ static void setupRx1Jacc (xref2osjob_t osjob) {
 
 
 static void jreqDone (xref2osjob_t osjob) {
-    //rs232_print(RS232_PORT_0, "in jreq done callback!\r\n");
+    rs232_print(RS232_PORT_0, "in jreq done callback!\r\n");
     txDone(DELAY_JACC1_osticks, FUNC_ADDR(setupRx1Jacc));
 }
 
@@ -1718,19 +1755,12 @@ static void buildJoinRequest (u1_t ftype) {
     os_getArtEui(d + OFF_JR_ARTEUI);
     os_getDevEui(d + OFF_JR_DEVEUI);
 
-    char buf[10];
-    sprintf(buf, "%x", LMIC.devNonce);
-    /*rs232_print(RS232_PORT_0, "DevNonce original: ");
+    char buf[20];
+    sprintf(buf, "%02x", LMIC.devNonce);
+    rs232_print(RS232_PORT_0, "devNonce: ");
     rs232_print(RS232_PORT_0, (char *) buf);
     rs232_print(RS232_PORT_0, "\r\n");
-    LMIC.devNonce += 70;
-
-    sprintf(buf, "%x", LMIC.devNonce);
-    rs232_print(RS232_PORT_0, "DevNonce modified: ");
-    rs232_print(RS232_PORT_0, (char *) buf);
-    rs232_print(RS232_PORT_0, "\r\n");*/
-
-    LMIC.devNonce = 0x1112;
+    //LMIC.devNonce = 0x50c1;   //
 
     os_wlsbf2(d + OFF_JR_DEVNONCE, LMIC.devNonce);
     aes_appendMic0(d, OFF_JR_MIC);
