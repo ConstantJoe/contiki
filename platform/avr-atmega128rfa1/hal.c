@@ -243,7 +243,8 @@ void lmic_hal_init ()
 	
 	PORTB = 1; // CE high=deselect only
 	
-	SPCR  = (1<<SPE) | (1<<MSTR) | (1<<SPR0); // SPI Control Register, clk/16=500kHz
+	//SPCR  = (1<<SPE) | (1<<MSTR) | (1<<SPR0); // SPI Control Register, clk/16=500kHz
+	SPCR  = (1<<SPE) | (1<<MSTR) | (1<<SPR0) | (1<<SPR1); //slow down  clock rate further
 	SPSR |= (1<<SPIF); // Clear int flag
 }
 

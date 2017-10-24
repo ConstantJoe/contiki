@@ -14,6 +14,8 @@
 
 
 #include "dev/rs232.h"
+#include "openpana_aes.h"
+#include "openpana_cmac.h"
 #include <stdio.h>
 
 #if !defined(MINRX_SYMS)
@@ -209,13 +211,89 @@ static void aes_appendMic0 (xref2u1_t pdu, int len) {
 static int aes_verifyMic0 (xref2u1_t pdu, int len) {
     os_getDevKey(AESkey);
 
-    return os_aes(AES_MIC|AES_MICNOAUX, pdu, len) == os_rmsbf4(pdu+len);
+    //Note: this has been modified from the original
+    unsigned char result[16];
+    AES_CMAC ( AESkey, (unsigned char *) pdu, len, result );
+
+
+    char buf[10];
+    xref2u1_t b = pdu+len;
+
+
+    int i;
+    rs232_print(RS232_PORT_0, "Full packet: ");
+    for(i=0;i<len+4;i++){
+        sprintf(buf, "%02x", pdu[i]);
+        rs232_print(RS232_PORT_0, (char * ) buf);
+        rs232_print(RS232_PORT_0, " ");
+    }
+    rs232_print(RS232_PORT_0, "\r\n");
+
+    int t = 1;
+    rs232_print(RS232_PORT_0, " mic comp:");
+    for(i=0;i<4;i++){
+        rs232_print(RS232_PORT_0, " ");
+        sprintf(buf, "%02x", b[i]);
+        rs232_print(RS232_PORT_0, (char * ) buf);
+
+        sprintf(buf, "%02x", result[i]);
+        rs232_print(RS232_PORT_0, (char * ) buf);
+        if(!(b[i] == result[i])) t = 0;
+    }
+    rs232_print(RS232_PORT_0, "\r\n");
+    return t;
+    //return os_aes(AES_MIC|AES_MICNOAUX, pdu, len) == os_rmsbf4(pdu+len);
 }
 
 
 static void aes_encrypt (xref2u1_t pdu, int len) {
     os_getDevKey(AESkey);
-    os_aes(AES_ENC, pdu, len);
+
+    unsigned char result1[16];
+    unsigned char result2[16];
+    
+    //does NOT use CMAC, uses AES128 ECB
+    //testing out this particular string: 9b 2b da 0f 1a 75 97 6d 48 ca ab a1 fd 9b 06 d1 36 11 18 83 de 40 15 f8 9b 21 2e a3 0d f1 14 bc
+    //should give:  8401140000000a0000000001389d8408
+    //              a584d8ac84a8b48478bc8400da1a0508
+
+    aes_context ctx;
+
+    //unsigned char test1 [16] = {0x9b, 0x2b, 0xda, 0x0f, 0x1a, 0x75, 0x97, 0x6d, 0x48, 0xca, 0xab, 0xa1, 0xfd, 0x9b, 0x06, 0xd1};
+    //unsigned char test2 [16] = {0x36, 0x11, 0x18, 0x83, 0xde, 0x40, 0x15, 0xf8, 0x9b, 0x21, 0x2e, 0xa3, 0x0d, 0xf1, 0x14, 0xbc};
+
+    aes_set_key(AESkey, 16, &ctx);
+    aesencrypt(pdu, result1, &ctx);
+    aesencrypt(pdu+16, result2, &ctx);
+    //AES_CMAC ( AESkey, (unsigned char *) pdu, len, result );
+
+    // char buf[16];
+
+    int i;
+    for(i=0;i<16;i++){
+        pdu[i] = result1[i];
+    }
+    for(i=0;i<16;i++){
+        pdu[i+16] = result2[i];
+    }
+    /*rs232_print(RS232_PORT_0, "Results of aes encrypt:\r\n"); 
+    int i;
+    for(i=0;i<16;i++){
+        sprintf(buf, "%02x", result1[i]);
+        rs232_print(RS232_PORT_0, (char *) buf);
+        rs232_print(RS232_PORT_0, " ");
+        //pdu[i] = result[i];
+    }
+    rs232_print(RS232_PORT_0, "\r\n");
+    for(i=0;i<16;i++){
+        sprintf(buf, "%02x", result2[i]);
+        rs232_print(RS232_PORT_0, (char *) buf);
+        rs232_print(RS232_PORT_0, " ");
+        //pdu[i] = result[i];
+    }
+    rs232_print(RS232_PORT_0, "\r\n");
+*/
+    //os_aes(AES_ENC, pdu, len);
 }
 
 
@@ -989,6 +1067,9 @@ static void stateJustJoined (void) {
     LMIC.dn2Dr       = DR_DNW2;
     LMIC.dn2Freq     = FREQ_DNW2;
     LMIC.bcnChnl     = CHNL_BCN;
+
+    
+
 #if defined CLASS_B
     LMIC.pingSetAns  = 0;
     LMIC.ping.freq   = FREQ_PING;
@@ -1316,7 +1397,7 @@ static void setupRx1 (osjobcb_t func) {
     LMIC.rps = setNocrc(LMIC.rps,1);
     LMIC.dataLen = 0;
     LMIC.osjob.func = func;
-    os_radio(RADIO_RX);
+    os_radio(RADIO_RXON); //TODO: changing this to be constantly on.
 }
 
 
@@ -1420,6 +1501,7 @@ static bit_t processJoinAccept (void) {
     if( LMIC.dataLen == 0 ) {
         rs232_print(RS232_PORT_0, "join failed, retry!\r\n");
       nojoinframe:
+        rs232_print(RS232_PORT_0, "ja no joinframe!!\r\n");
         if( (LMIC.opmode & OP_JOINING) == 0 ) {
             ASSERT((LMIC.opmode & OP_REJOIN) != 0);
             // REJOIN attempt for roaming
@@ -1444,21 +1526,34 @@ static bit_t processJoinAccept (void) {
     u1_t hdr  = LMIC.frame[0];
     u1_t dlen = LMIC.dataLen;
     u4_t mic  = os_rlsbf4(&LMIC.frame[dlen-4]); // safe before modified by encrypt!
+    rs232_print(RS232_PORT_0, "ja 0.1!!\r\n");
     if( (dlen != LEN_JA && dlen != LEN_JAEXT)
         || (hdr & (HDR_FTYPE|HDR_MAJOR)) != (HDR_FTYPE_JACC|HDR_MAJOR_V1) ) {
       badframe:
+        rs232_print(RS232_PORT_0, "ja badframe!!\r\n");
         if( (LMIC.txrxFlags & TXRX_DNW1) != 0 )
             return 0;
         goto nojoinframe;
     }
-    aes_encrypt(LMIC.frame+1, dlen-1);
+    rs232_print(RS232_PORT_0, "ja 0.2!!\r\n");
+    aes_encrypt(LMIC.frame+1, dlen-1); 
+    
+    //todo: found out why: "The  network server uses an AES decrypt operation in ECB mode to encrypt the 
+    //join-accept message so that the end-device can use an AES encrypt operation to decrypt the message. 
+    //This way an end-device only has to implement AES encrypt but not AES decrypt."
+
+    rs232_print(RS232_PORT_0, "ja 0.3!!\r\n");
     if( !aes_verifyMic0(LMIC.frame, dlen-4) ) {
         goto badframe;
     }
 
+    rs232_print(RS232_PORT_0, "ja 1!!\r\n");
+
     u4_t addr = os_rlsbf4(LMIC.frame+OFF_JA_DEVADDR);
     LMIC.devaddr = addr;
     LMIC.netid = os_rlsbf4(&LMIC.frame[OFF_JA_NETID]) & 0xFFFFFF;
+
+    rs232_print(RS232_PORT_0, "ja 2!!\r\n");
 
 #if defined(CFG_eu868)
     initDefaultChannels(0);
@@ -1476,6 +1571,8 @@ static bit_t processJoinAccept (void) {
         }
     }
 
+    rs232_print(RS232_PORT_0, "ja 3!!\r\n");
+
     // already incremented when JOIN REQ got sent off
     aes_sessKeys(LMIC.devNonce-1, &LMIC.frame[OFF_JA_ARTNONCE], LMIC.nwkKey, LMIC.artKey);
     
@@ -1484,9 +1581,13 @@ static bit_t processJoinAccept (void) {
         // Lower DR every try below current UP DR
         LMIC.datarate = lowerDR(LMIC.datarate, LMIC.rejoinCnt);
     }
+
+    rs232_print(RS232_PORT_0, "ja 4!!\r\n");
     LMIC.opmode &= ~(OP_JOINING|OP_TRACK|OP_REJOIN|OP_TXRXPEND|OP_PINGINI) | OP_NEXTCHNL;
     stateJustJoined();
     reportEvent(EV_JOINED);
+
+    rs232_print(RS232_PORT_0, "ja 5!!\r\n");
     return 1;
 }
 
@@ -1521,7 +1622,8 @@ static void setupRx1Jacc (xref2osjob_t osjob) {
 
 static void jreqDone (xref2osjob_t osjob) {
     rs232_print(RS232_PORT_0, "in jreq done callback!\r\n");
-    txDone(DELAY_JACC1_osticks, FUNC_ADDR(setupRx1Jacc));
+    txDone(0, FUNC_ADDR(setupRx1Jacc)); //TODO shortening this to be immediate instead of 5 seconds.
+    //txDone(DELAY_JACC1_osticks, FUNC_ADDR(setupRx1Jacc));
 }
 
 // ======================================== Data frames

@@ -31,6 +31,8 @@
  that developed by Karl Malbrain. His contribution is acknowledged.
  */
 
+//#include "dev/rs232.h"
+
 // define if you have a fast memcpy function on your system */
 #if 1
 #  define HAVE_MEMCPY
@@ -525,6 +527,15 @@ return_type aes_set_key( const unsigned char key[], length_type keylen, aes_cont
 
 return_type aesencrypt( const unsigned char in[N_BLOCK], unsigned char  out[N_BLOCK], const aes_context ctx[1] )
 {
+    /*rs232_print(RS232_PORT_0, "data from in:\r\n");
+    int i;
+    char buf[16];
+    for(i=0;i<16;i++){
+        sprintf(buf, "%02x", in[i]);
+        rs232_print(RS232_PORT_0, (char *) buf);
+        rs232_print(RS232_PORT_0, " ");  
+    }
+    rs232_print(RS232_PORT_0, "\r\n");*/
     if( ctx->rnd )
     {
         uint_8t s1[N_BLOCK], r;

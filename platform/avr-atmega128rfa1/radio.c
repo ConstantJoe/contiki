@@ -586,17 +586,7 @@ static void txlora () {
     // now we actually start the transmission
     opmode(OPMODE_TX);
 
-    writeReg(RegOpMode, 0x83);
-
-    readReg(RegOpMode); //ensure that it properly went into TX mode
-    writeReg(RegOpMode, 0x83);
-    readReg(RegOpMode);
-    writeReg(RegOpMode, 0x83);
-    readReg(RegOpMode);
-    writeReg(RegOpMode, 0x83);
-    readReg(RegOpMode);
-    writeReg(RegOpMode, 0x83);
-    readReg(RegOpMode);
+    //writeReg(RegOpMode, 0x83);
 
     readReg(LORARegHopChannel);
 
@@ -626,7 +616,7 @@ static const u1_t rxlorairqmask[] = {
 // start LoRa receiver (time=LMIC.rxtime, timeout=LMIC.rxsyms, result=LMIC.frame[LMIC.dataLen])
 static void rxlora (u1_t rxmode) {
     // select LoRa modem (from sleep mode)
-    //rs232_print(RS232_PORT_0, "In rxlora!\r\n");
+    rs232_print(RS232_PORT_0, "In rxlora!\r\n");
     opmodeLora();
 
     ASSERT((readReg(RegOpMode) & OPMODE_LORA) != 0);
@@ -682,7 +672,7 @@ static void rxlora (u1_t rxmode) {
         char buf3[20];
         sprintf(buf3, "%lu", os_getTime());
 
-        /*rs232_print(RS232_PORT_0, "Wait for: ");
+        rs232_print(RS232_PORT_0, "Wait for: ");
         rs232_print(RS232_PORT_0, (char *) buf1);
         rs232_print(RS232_PORT_0, "\r\n");
 
@@ -692,7 +682,7 @@ static void rxlora (u1_t rxmode) {
 
         rs232_print(RS232_PORT_0, "minus: ");
         rs232_print(RS232_PORT_0, (char *) buf3);
-        rs232_print(RS232_PORT_0, "\r\n");*/
+        rs232_print(RS232_PORT_0, "\r\n");
         hal_enableIRQs();
         hal_wait(LMIC.rxtime - os_getTime()); //TODO: here's the problem
         hal_disableIRQs();
@@ -834,7 +824,12 @@ void radio_init () {
 
     opmode(OPMODE_SLEEP);
 
+
+    rs232_print(RS232_PORT_0, "5\r\n");
+
     hal_enableIRQs();
+
+    rs232_print(RS232_PORT_0, "6\r\n");
 }
 
 // return next random byte derived from seed buffer
@@ -880,7 +875,7 @@ static const u2_t LORA_RXDONE_FIXUP[] = {
 // (radio goes to stanby mode after tx/rx operations)
 void radio_irq_handler (u1_t dio) {
     //DIO isn't used?
-
+    rs232_print(RS232_PORT_0, "In IRQ handler!\r\n");
 
     ostime_t now = os_getTime();
     if( (readReg(RegOpMode) & OPMODE_LORA) != 0) { // LORA modem
@@ -907,9 +902,24 @@ void radio_irq_handler (u1_t dio) {
             writeReg(LORARegFifoAddrPtr, readReg(LORARegFifoRxCurrentAddr)); 
             // now read the FIFO
             readBuf(RegFifo, LMIC.frame, LMIC.dataLen);
+
+            int i;
+            char buf[20];
+            rs232_print(RS232_PORT_0, "Full packet from irq handler:");
+            for(i=0;i<LMIC.dataLen;i++){
+                sprintf(buf, "%02x", LMIC.frame[i]);
+                rs232_print(RS232_PORT_0, (char *) buf);
+                rs232_print(RS232_PORT_0, " ");
+            }
+            rs232_print(RS232_PORT_0, "\r\n");
             // read rx quality parameters
             LMIC.snr  = readReg(LORARegPktSnrValue); // SNR [dB] * 4
             LMIC.rssi = readReg(LORARegPktRssiValue) - 125 + 64; // RSSI [dBm] (-196...+63)
+
+            //Note: added by me: changed from Recv Single to Recv Continuous as have not yet fully synced the timer, and so keep missing the preamble.
+            //Here we change from Recv Continuous back to standby mode
+            opmode(OPMODE_STANDBY);
+
         } else if( flags & IRQ_LORA_RXTOUT_MASK ) {
             // indicate timeout
             rs232_print(RS232_PORT_0, "Timeout :(\r\n");
