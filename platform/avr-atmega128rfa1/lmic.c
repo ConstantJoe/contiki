@@ -12,8 +12,6 @@
 //! \file
 #include "lmic.h"
 
-
-#include "dev/rs232.h"
 #include "openpana_aes.h"
 #include "openpana_cmac.h"
 #include <stdio.h>
@@ -114,23 +112,6 @@ void os_wmsbf4 (xref2u1_t buf, u4_t v) {
     buf[2] = v>>8;
     buf[1] = v>>16;
     buf[0] = v>>24;
-
-    sprintf(bufe, "%02x", buf[3]);
-    rs232_print(RS232_PORT_0, "Writing os_wsmbf4: ");
-    rs232_print(RS232_PORT_0, (char *) bufe);
-    rs232_print(RS232_PORT_0, "\r\n");
-    sprintf(bufe, "%02x", buf[2]);
-    rs232_print(RS232_PORT_0, "Writing os_wsmbf4: ");
-    rs232_print(RS232_PORT_0, (char *) bufe);
-    rs232_print(RS232_PORT_0, "\r\n");
-    sprintf(bufe, "%02x", buf[1]);
-    rs232_print(RS232_PORT_0, "Writing os_wsmbf4: ");
-    rs232_print(RS232_PORT_0, (char *) bufe);
-    rs232_print(RS232_PORT_0, "\r\n");
-    sprintf(bufe, "%02x", buf[0]);
-    rs232_print(RS232_PORT_0, "Writing os_wsmbf4: ");
-    rs232_print(RS232_PORT_0, (char *) bufe);
-    rs232_print(RS232_PORT_0, "\r\n");
 }
 #endif
 
@@ -204,7 +185,6 @@ static int aes_verifyMic (xref2cu1_t key, u4_t devaddr, u4_t seqno, int dndir, x
     xref2u1_t b = pdu+len;
 
     int t = 1;
-    //rs232_print(RS232_PORT_0, " mic comp:");
     for(i=0;i<4;i++){
         
         if(!(b[i] == result[i])){
@@ -269,37 +249,19 @@ static int aes_verifyMic0 (xref2u1_t pdu, int len) {
     unsigned char result[16];
     AES_CMAC ( AESkey, (unsigned char *) pdu, len, result );
 
-
-    //char buf[10];
     xref2u1_t b = pdu+len;
 
 
     int i;
-    /*rs232_print(RS232_PORT_0, "Full packet: ");
-    for(i=0;i<len+4;i++){
-        sprintf(buf, "%02x", pdu[i]);
-        rs232_print(RS232_PORT_0, (char * ) buf);
-        rs232_print(RS232_PORT_0, " ");
-    }
-    rs232_print(RS232_PORT_0, "\r\n");*/
 
     int t = 1;
-    //rs232_print(RS232_PORT_0, " mic comp:");
     for(i=0;i<4;i++){
-        //rs232_print(RS232_PORT_0, " ");
-        //sprintf(buf, "%02x", b[i]);
-        //rs232_print(RS232_PORT_0, (char * ) buf);
-
-        //sprintf(buf, "%02x", result[i]);
-        //rs232_print(RS232_PORT_0, (char * ) buf);
         if(!(b[i] == result[i])){
             t = 0;
             break;  
         } 
     }
-    //rs232_print(RS232_PORT_0, "\r\n");
     return t;
-    //return os_aes(AES_MIC|AES_MICNOAUX, pdu, len) == os_rmsbf4(pdu+len);
 }
 
 
@@ -308,56 +270,20 @@ static void aes_encrypt (xref2u1_t pdu, int len) {
 
     unsigned char result1[16];
     unsigned char result2[16];
-    
-    //does NOT use CMAC, uses AES128 ECB
-    //testing out this particular string: 9b 2b da 0f 1a 75 97 6d 48 ca ab a1 fd 9b 06 d1 36 11 18 83 de 40 15 f8 9b 21 2e a3 0d f1 14 bc
-    //should give:  8401140000000a0000000001389d8408
-    //              a584d8ac84a8b48478bc8400da1a0508
 
     aes_context ctx;
-
-    //unsigned char test1 [16] = {0x9b, 0x2b, 0xda, 0x0f, 0x1a, 0x75, 0x97, 0x6d, 0x48, 0xca, 0xab, 0xa1, 0xfd, 0x9b, 0x06, 0xd1};
-    //unsigned char test2 [16] = {0x36, 0x11, 0x18, 0x83, 0xde, 0x40, 0x15, 0xf8, 0x9b, 0x21, 0x2e, 0xa3, 0x0d, 0xf1, 0x14, 0xbc};
 
     aes_set_key(AESkey, 16, &ctx);
     aesencrypt(pdu, result1, &ctx);
     aesencrypt(pdu+16, result2, &ctx);
-    //AES_CMAC ( AESkey, (unsigned char *) pdu, len, result );
-
-    // char buf[16];
 
     int i;
     for(i=0;i<16;i++){
         pdu[i] = result1[i];
         pdu[i+16] = result2[i];
     }
-    /*for(i=0;i<16;i++){
-        pdu[i+16] = result2[i];
-    }*/
-    /*rs232_print(RS232_PORT_0, "Results of aes encrypt:\r\n"); 
-    int i;
-    for(i=0;i<16;i++){
-        sprintf(buf, "%02x", result1[i]);
-        rs232_print(RS232_PORT_0, (char *) buf);
-        rs232_print(RS232_PORT_0, " ");
-        //pdu[i] = result[i];
-    }
-    rs232_print(RS232_PORT_0, "\r\n");
-    for(i=0;i<16;i++){
-        sprintf(buf, "%02x", result2[i]);
-        rs232_print(RS232_PORT_0, (char *) buf);
-        rs232_print(RS232_PORT_0, " ");
-        //pdu[i] = result[i];
-    }
-    rs232_print(RS232_PORT_0, "\r\n");
-*/
-    //os_aes(AES_ENC, pdu, len);
 }
 
-//TODO: this needs to be modified to not use os_aes
-//"For each data message, the algorithm defines a sequence of Blocks Ai for i=1..k with k= ceil(len(pld)/16)"
-// The blocks Ai are encrypted to get a sequence S of blocks Si
-// Encryption and decryption of the payload is done by truncating (pld | pad16) xor S to the first len(pld) octets.
 static void aes_cipher (xref2cu1_t key, u4_t devaddr, u4_t seqno, int dndir, xref2u1_t payload, int len) {
     if( len <= 0 )
         return;
@@ -391,20 +317,15 @@ static void aes_cipher (xref2cu1_t key, u4_t devaddr, u4_t seqno, int dndir, xre
     }
     
     //perform xor operation
-    //TODO: is result2 needed here?
     unsigned char result2[len];
     for(i=0;i<len;i++){
         result2[i] = payload[i] ^ S[i];
     }
     for(i=0;i<len;i++){
         payload[i] = result2[i];
-    }
-    
-    //os_aes(AES_CTR, payload, len);
-        
+    }    
 }
 
-//Note: this will have to be modified to not use os_aes.
 // NwkSkey = aes128_encrypt(Appkey, 0x01 | AppNonce | NetID | DevNonce | pad16)
 // AppSkey = aes128_encrypt(Appkey, 0x02 | AppNonce | NetID | DevNonce | pad16)
 static void aes_sessKeys (u2_t devnonce, xref2cu1_t artnonce, xref2u1_t nwkkey, xref2u1_t artkey) {
@@ -432,10 +353,6 @@ static void aes_sessKeys (u2_t devnonce, xref2cu1_t artnonce, xref2u1_t nwkkey, 
         nwkkey[i] = result1[i];
         artkey[i] = result2[i];
     }
-    /*os_getDevKey(AESkey);
-    os_aes(AES_ENC, nwkkey, 16);
-    os_getDevKey(AESkey);
-    os_aes(AES_ENC, artkey, 16);*/
 }
 
 // END AES
@@ -860,11 +777,7 @@ static void updateTx (ostime_t txbeg) {
     u4_t freq = LMIC.channelFreq[LMIC.txChnl];
     // Update global/band specific duty cycle stats
     ostime_t airtime = calcAirTime(LMIC.rps, LMIC.dataLen);
-    //rs232_print(RS232_PORT_0, "Airtime: \r\n");
-         char buf[20];
-         sprintf(buf, "%lu", airtime);
-          rs232_print(RS232_PORT_0, (char *) buf);
-           rs232_print(RS232_PORT_0, "\r\n");
+
     // Update channel/global duty cycle stats
     xref2band_t band = &LMIC.bands[freq & 0x3];
     LMIC.freq  = freq & ~(u4_t)3;
@@ -875,16 +788,12 @@ static void updateTx (ostime_t txbeg) {
 }
 
 static ostime_t nextTx (ostime_t now) {
-    //TODO: Calc going weird here. Txbeg not being calculated properly.
     u1_t bmap=0xF;
-     //rs232_print(RS232_PORT_0, "In next tx!\r\n");
+
     do {
         ostime_t mintime = now + /*10h*/36000*OSTICKS_PER_SEC;
-         //rs232_print(RS232_PORT_0, "Mintime:\r\n");
-         char buf[20];
-         sprintf(buf, "%lu", mintime);
-          //rs232_print(RS232_PORT_0, (char *) buf);
-           //rs232_print(RS232_PORT_0, "\r\n");
+        char buf[20];
+        sprintf(buf, "%lu", mintime);
         u1_t band=0;
         u1_t bi;
         for(bi=0; bi<4; bi++ ) {
@@ -1087,7 +996,6 @@ static void initJoinLoop (void) {
     LMIC.txChnl = 0;
     LMIC.adrTxPow = 20;
     ASSERT((LMIC.opmode & OP_NEXTCHNL)==0);
-    //rs232_print(RS232_PORT_0, "In init Join loop US915.\r\n");
     LMIC.txend = os_getTime();
     setDrJoin(DRCHG_SET, DR_SF7);
 }
@@ -1138,8 +1046,6 @@ static void runEngineUpdate (xref2osjob_t osjob) {
 
 static void reportEvent (ev_t ev)
 {
-    //rs232_print(RS232_PORT_0, "In report event!\r\n");
-
     ON_LMIC_EVENT(ev); //calls onEvent func
     engineUpdate();
 }
@@ -1153,7 +1059,6 @@ static void runReset (xref2osjob_t osjob) {
 }
 
 static void stateJustJoined (void) {
-    rs232_print(RS232_PORT_0, "reached state just joined!\r\n");
     LMIC.seqnoDn     = LMIC.seqnoUp = 0;
     LMIC.rejoinCnt   = 0;
     LMIC.dnConf      = LMIC.adrChanged = LMIC.ladrAns = LMIC.devsAns = 0;
@@ -1163,8 +1068,6 @@ static void stateJustJoined (void) {
     LMIC.dn2Dr       = DR_DNW2;
     LMIC.dn2Freq     = FREQ_DNW2;
     LMIC.bcnChnl     = CHNL_BCN;
-
-    
 
 #if defined CLASS_B
     LMIC.pingSetAns  = 0;
@@ -1436,7 +1339,6 @@ static bit_t decodeFrame (void) {
 
 
 static void setupRx2 (void) {
-    rs232_print(RS232_PORT_0, "in setuprx2!\r\n");
     LMIC.txrxFlags = TXRX_DNW2;
     LMIC.rps = dndr2rps(LMIC.dn2Dr);
     LMIC.freq = LMIC.dn2Freq;
@@ -1447,7 +1349,6 @@ static void setupRx2 (void) {
 
 
 static void schedRx2 (ostime_t delay, osjobcb_t func) {
-    rs232_print(RS232_PORT_0, "in schedRx2!\r\n");
     // Add 1.5 symbols we need 5 out of 8. Try to sync 1.5 symbols into the preamble.
     LMIC.rxtime = LMIC.txend + delay + (PAMBL_SYMS-MINRX_SYMS)*dr2hsym(LMIC.dn2Dr);
     
@@ -1455,7 +1356,6 @@ static void schedRx2 (ostime_t delay, osjobcb_t func) {
 }
 
 static void setupRx1 (osjobcb_t func) {
-    rs232_print(RS232_PORT_0, "in setuprx1!\r\n");
     LMIC.txrxFlags = TXRX_DNW1;
     // Turn LMIC.rps from TX over to RX
     LMIC.rps = setNocrc(LMIC.rps,1);
@@ -1467,14 +1367,7 @@ static void setupRx1 (osjobcb_t func) {
 
 // Called by HAL once TX complete and delivers exact end of TX time stamp in LMIC.rxtime
 static void txDone (ostime_t delay, osjobcb_t func) {
-    rs232_print(RS232_PORT_0, "in tx done!\r\n");
 
-    char buf[20];
-	sprintf(buf, "%lu", delay);
-
-    rs232_print(RS232_PORT_0, "delay required:\r\n");
-    rs232_print(RS232_PORT_0, (char *) buf);
-    rs232_print(RS232_PORT_0, "\r\n");
     #if defined CLASS_B
     if( (LMIC.opmode & (OP_TRACK|OP_PINGABLE|OP_PINGINI)) == (OP_TRACK|OP_PINGABLE) ) {
         rxschedInit(&LMIC.ping);    // note: reuses LMIC.frame buffer!
@@ -1552,10 +1445,6 @@ static bit_t processJoinAccept (void) {
     }
     aes_encrypt(LMIC.frame+1, dlen-1); 
     
-    //todo: found out why: "The  network server uses an AES decrypt operation in ECB mode to encrypt the 
-    //join-accept message so that the end-device can use an AES encrypt operation to decrypt the message. 
-    //This way an end-device only has to implement AES encrypt but not AES decrypt."
-
     if( !aes_verifyMic0(LMIC.frame, dlen-4) ) {
         goto badframe;
     }
@@ -1598,7 +1487,6 @@ static bit_t processJoinAccept (void) {
 
 
 static void processRx2Jacc (xref2osjob_t osjob) {
-    rs232_print(RS232_PORT_0, "in process rx2 jacc!\r\n");
     if( LMIC.dataLen == 0 )
         LMIC.txrxFlags = 0;  // nothing in 1st/2nd DN slot
     processJoinAccept();
@@ -1606,28 +1494,24 @@ static void processRx2Jacc (xref2osjob_t osjob) {
 
 
 static void setupRx2Jacc (xref2osjob_t osjob) {
-    rs232_print(RS232_PORT_0, "in setup rx2 jacc!\r\n");
     LMIC.osjob.func = FUNC_ADDR(processRx2Jacc);
     setupRx2();
 }
 
 
 static void processRx1Jacc (xref2osjob_t osjob) {
-    rs232_print(RS232_PORT_0, "in process rx1 jacc!\r\n");
     if( LMIC.dataLen == 0 || !processJoinAccept() )
         schedRx2(DELAY_JACC2_osticks, FUNC_ADDR(setupRx2Jacc));
 }
 
 
 static void setupRx1Jacc (xref2osjob_t osjob) {
-    rs232_print(RS232_PORT_0, "in rx1 callback after a wait!\r\n");
     setupRx1(FUNC_ADDR(processRx1Jacc));
 }
 
 
 static void jreqDone (xref2osjob_t osjob) {
-    rs232_print(RS232_PORT_0, "in jreq done callback!\r\n");
-    txDone(0, FUNC_ADDR(setupRx1Jacc)); //TODO shortening this to be immediate instead of 5 seconds.
+    txDone(0, FUNC_ADDR(setupRx1Jacc)); //NOTE: shortening this to be immediate instead of 5 seconds.
     //txDone(DELAY_JACC1_osticks, FUNC_ADDR(setupRx1Jacc));
 }
 
@@ -1641,7 +1525,6 @@ static void processRx2DnDataDelay (xref2osjob_t osjob) {
 }
 
 static void processRx2DnData (xref2osjob_t osjob) {
-    rs232_print(RS232_PORT_0, "in processrx2dndata!\r\n");
     if( LMIC.dataLen == 0 ) {
         LMIC.txrxFlags = 0;  // nothing in 1st/2nd DN slot
         // Delay callback processing to avoid up TX while gateway is txing our missed frame! 
@@ -1656,27 +1539,23 @@ static void processRx2DnData (xref2osjob_t osjob) {
 
 
 static void setupRx2DnData (xref2osjob_t osjob) {
-    rs232_print(RS232_PORT_0, "in setuprx2dndata!\r\n");
     LMIC.osjob.func = FUNC_ADDR(processRx2DnData);
     setupRx2();
 }
 
 
 static void processRx1DnData (xref2osjob_t osjob) {
-    rs232_print(RS232_PORT_0, "in processrx1dndata!\r\n");
     if( LMIC.dataLen == 0 || !processDnData() )
         schedRx2(DELAY_DNW2_osticks, FUNC_ADDR(setupRx2DnData));
 }
 
 
-static void setupRx1DnData (xref2osjob_t osjob) {
-    rs232_print(RS232_PORT_0, "in setuprx1dndata!\r\n");
+static void setupRx1DnData (xref2osjob_t osjob) {;
     setupRx1(FUNC_ADDR(processRx1DnData));
 }
 
 
 static void updataDone (xref2osjob_t osjob) {
-    rs232_print(RS232_PORT_0, "in updatadone!\r\n");
     txDone(0, FUNC_ADDR(setupRx1DnData)); //Note: changed here. Looks like we keep missing the interrupt.
     //txDone(DELAY_DNW1_osticks, FUNC_ADDR(setupRx1DnData));
 }
@@ -1783,7 +1662,7 @@ static void buildDataFrame (void) {
                    LMIC.devaddr, LMIC.seqnoUp-1,
                    /*up*/0, LMIC.frame+end+1, dlen);
     }
-    //TODO: is this mic correct?
+
     aes_appendMic(LMIC.nwkKey, LMIC.devaddr, LMIC.seqnoUp-1, /*up*/0, LMIC.frame, flen-4);
 
     LMIC.dataLen = flen;
@@ -1869,23 +1748,14 @@ static void buildJoinRequest (u1_t ftype) {
     os_getArtEui(d + OFF_JR_ARTEUI);
     os_getDevEui(d + OFF_JR_DEVEUI);
 
-    char buf[20];
-    sprintf(buf, "%02x", LMIC.devNonce);
-    rs232_print(RS232_PORT_0, "devNonce: ");
-    rs232_print(RS232_PORT_0, (char *) buf);
-    rs232_print(RS232_PORT_0, "\r\n");
-    //LMIC.devNonce = 0x50c1;   //
-
     os_wlsbf2(d + OFF_JR_DEVNONCE, LMIC.devNonce);
     aes_appendMic0(d, OFF_JR_MIC);
 
     LMIC.dataLen = LEN_JR;
     LMIC.devNonce++;
-    //rs232_print(RS232_PORT_0, "Join request built!!\r\n");
 }
 
 static void startJoining (xref2osjob_t osjob) {
-    //rs232_print(RS232_PORT_0, "start joining!\r\n");
     reportEvent(EV_JOINING);
 }
 
@@ -1930,7 +1800,6 @@ static void processPingRx (xref2osjob_t osjob) {
 #endif
 
 static bit_t processDnData (void) {
-    rs232_print(RS232_PORT_0, "In processdndata\r\n");
     ASSERT((LMIC.opmode & OP_TXRXPEND)!=0);
 
     if( LMIC.dataLen == 0 ) {
@@ -2065,22 +1934,15 @@ static void startRxPing (xref2osjob_t osjob) {
 // Decide what to do next for the MAC layer of a device
 static void engineUpdate (void) {
     // Check for ongoing state: scan or TX/RX transaction
-    rs232_print(RS232_PORT_0, "in engineUpdate\r\n ");
 
-    char b[16];
-    sprintf(b, "%02x", LMIC.opmode);
-    rs232_print(RS232_PORT_0, (char *) b);
-    rs232_print(RS232_PORT_0, "\r\n");
     if( (LMIC.opmode & (OP_SCAN|OP_TXRXPEND|OP_SHUTDOWN)) != 0 ) 
         return;
 
     if( LMIC.devaddr == 0 && (LMIC.opmode & OP_JOINING) == 0 ) {
-        rs232_print(RS232_PORT_0, "No devaddr - Going to start joining!\r\n");
         LMIC_startJoining();
         return;
     }
 
-    //rs232_print(RS232_PORT_0, "Gone past start joining!\r\n");
     ostime_t now    = os_getTime();
     ostime_t rxtime = 0;
     ostime_t txbeg  = 0;
@@ -2094,25 +1956,20 @@ static void engineUpdate (void) {
 	#endif
 
     if( (LMIC.opmode & (OP_JOINING|OP_REJOIN|OP_TXDATA|OP_POLL)) != 0 ) {
-        rs232_print(RS232_PORT_0, "in cond 1 - need to tx!\r\n");
-        //rs232_print(RS232_PORT_0, "finding how txbeg is calculated:\r\n");
+
         // Need to TX some data...
         // Assuming txChnl points to channel which first becomes available again.
         bit_t jacc = ((LMIC.opmode & (OP_JOINING|OP_REJOIN)) != 0 ? 1 : 0);
         // Find next suitable channel and return availability time
         if( (LMIC.opmode & OP_NEXTCHNL) != 0 ) {
-            //rs232_print(RS232_PORT_0, "1.\r\n");
             txbeg = LMIC.txend = nextTx(now);
             LMIC.opmode &= ~OP_NEXTCHNL;
         } else {
-            //rs232_print(RS232_PORT_0, "2.\r\n");
             txbeg = LMIC.txend;
         }
 
-        rs232_print(RS232_PORT_0, "did jacc!\r\n");
         // Delayed TX or waiting for duty cycle?
         if( (LMIC.globalDutyRate != 0 || (LMIC.opmode & OP_RNDTX) != 0)  &&  (txbeg - LMIC.globalDutyAvail) < 0 ){
-            //rs232_print(RS232_PORT_0, "3.\r\n");
             txbeg = LMIC.globalDutyAvail;
         }
 		#if defined CLASS_B
@@ -2120,7 +1977,6 @@ static void engineUpdate (void) {
         // then make sure TX-RX transaction is complete before beacon
         if( (LMIC.opmode & OP_TRACK) != 0 &&
             txbeg + (jacc ? JOIN_GUARD_osticks : TXRX_GUARD_osticks) - rxtime > 0 ) {
-            //rs232_print(RS232_PORT_0, "4.\r\n");
             // Not enough time to complete TX-RX before beacon - postpone after beacon.
             // In order to avoid clustering of postponed TX right after beacon randomize start!
             txDelay(rxtime + BCN_RESERVE_osticks, 16);
@@ -2135,7 +1991,7 @@ static void engineUpdate (void) {
         txbeg = now;
             dr_t txdr = (dr_t)LMIC.datarate;
             if( jacc ) {
-                //rs232_print(RS232_PORT_0, "jacc true!\r\n");
+
                 u1_t ftype;
                 if( (LMIC.opmode & OP_REJOIN) != 0 ) {
                     txdr = lowerDR(txdr, LMIC.rejoinCnt);
@@ -2143,12 +1999,11 @@ static void engineUpdate (void) {
                 } else {
                     ftype = HDR_FTYPE_JREQ;
                 }
-                rs232_print(RS232_PORT_0, "start building join request!\r\n");
+
                 buildJoinRequest(ftype);
                 LMIC.osjob.func = FUNC_ADDR(jreqDone);
-                //rs232_print(RS232_PORT_0, "osjob func assigned!\r\n");
+
             } else {
-                rs232_print(RS232_PORT_0, "jacc false!\r\n");
                 if( LMIC.seqnoDn >= 0xFFFFFF80 ) {
                     // Imminent roll over - proactively reset MAC
                     // Device has to react! NWK will not roll over and just stop sending.
@@ -2170,32 +2025,11 @@ static void engineUpdate (void) {
             LMIC.dndr   = txdr;  // carry TX datarate (can be != LMIC.datarate) over to txDone/setupRx1
             LMIC.opmode = (LMIC.opmode & ~(OP_POLL|OP_RNDTX)) | OP_TXRXPEND | OP_NEXTCHNL;
 
-            rs232_print(RS232_PORT_0, "LMIC params set!\r\n");
             updateTx(txbeg);
-            rs232_print(RS232_PORT_0, "Update tx done!\r\n");
             os_radio(RADIO_TX);
-            rs232_print(RS232_PORT_0, "os radio tx done!\r\n");
             return;
         }
-        rs232_print(RS232_PORT_0, "txbeg was too big!\r\n");
 
-        /*char buf1[20];
-        sprintf(buf1, "%lu", txbeg);
-        rs232_print(RS232_PORT_0, "txbeg: ");
-        rs232_print(RS232_PORT_0, (char *) buf1);
-        rs232_print(RS232_PORT_0, "\r\n");
-
-        char buf2[20];
-        sprintf(buf2, "%lu", now);
-        rs232_print(RS232_PORT_0, "now: ");
-        rs232_print(RS232_PORT_0, (char *) buf2);
-        rs232_print(RS232_PORT_0, "\r\n");
-
-        char buf3[20];
-        sprintf(buf3, "%lu", TX_RAMPUP);
-        rs232_print(RS232_PORT_0, "rampup time: ");
-        rs232_print(RS232_PORT_0, (char *) buf3);
-        rs232_print(RS232_PORT_0, "\r\n");*/
         // Cannot yet TX
         if( (LMIC.opmode & OP_TRACK) == 0 )
             goto txdelay; // We don't track the beacon - nothing else to do - so wait for the time to TX
@@ -2244,20 +2078,6 @@ static void engineUpdate (void) {
 	#endif
 
   txdelay:
-    /*rs232_print(RS232_PORT_0, "tx delay needed!\r\n");
-    char buf[20];
-    char buf2[20];
-    char buf3[20];
-    sprintf(buf, "%ld", txbeg-TX_RAMPUP);
-    sprintf(buf2, "%ld", txbeg);
-    sprintf(buf3, "%ld", TX_RAMPUP);
-    rs232_print(RS232_PORT_0, "Waiting for: ");
-    rs232_print(RS232_PORT_0, (char * ) buf);
-    rs232_print(RS232_PORT_0, "ticks\r\n");
-    rs232_print(RS232_PORT_0, (char * ) buf2);
-    rs232_print(RS232_PORT_0, "ticks for txbeg\r\n");
-    rs232_print(RS232_PORT_0, (char * ) buf3);
-    rs232_print(RS232_PORT_0, "ticks for TX_RAMPUP\r\n");*/
     os_setTimedCallback(&LMIC.osjob, txbeg-TX_RAMPUP, FUNC_ADDR(runEngineUpdate));
 }
 
@@ -2288,15 +2108,10 @@ void LMIC_restart (void) //restart after a LMIC_shutdown without reset
 
 
 void LMIC_reset (void) {
-
-    rs232_print(RS232_PORT_0, "LMIC reset start\r\n");
-
     os_clearCallback(&LMIC.osjob);
 
-    rs232_print(RS232_PORT_0, "LMIC reset start 1\r\n");
     os_clearMem((xref2u1_t)&LMIC,SIZEOFEXPR(LMIC));
 
-    rs232_print(RS232_PORT_0, "LMIC reset start 2\r\n");
     LMIC.devaddr      =  0;
     LMIC.devNonce     =  os_getRndU2();
     LMIC.opmode       =  OP_NONE;
@@ -2332,13 +2147,6 @@ void LMIC_clrTxData (void) {
 
 
 void LMIC_setTxData (void) {
-    char buf[20];
-    sprintf(buf, "%02x", LMIC.opmode);
-
-    rs232_print(RS232_PORT_0, "LMIC opmode: ");
-    rs232_print(RS232_PORT_0, (char *) buf);
-    rs232_print(RS232_PORT_0, "\r\n");
-
     LMIC.opmode |= OP_TXDATA;
     if( (LMIC.opmode & OP_JOINING) == 0 )
         LMIC.txCnt = 0;             // cancel any ongoing TX/RX retries

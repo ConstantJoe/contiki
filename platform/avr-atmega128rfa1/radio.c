@@ -270,57 +270,20 @@ u1_t direction[255]; //0 for output, 1 for input
 
 u1_t data_ctr = 0;
 
-/*static void printDataHolder(){
-    rs232_print(RS232_PORT_0, "Data holder full, printing:\r\n");
-
-    char buf1[5], buf2[5];
-    int x;
-
-    for(x=0; x<255; x++){
-        sprintf(buf1, "%x", data_holder[x]);
-        sprintf(buf2, "%x", direction[x]);
-
-        rs232_print(RS232_PORT_0, (char *) buf1);
-        rs232_print(RS232_PORT_0, " ");
-        rs232_print(RS232_PORT_0, (char *) buf2);
-        rs232_print(RS232_PORT_0, "\r\n");
-    }
-
-    data_ctr = 0;
-}*/
-
-static void printData(u1_t d, u1_t dir){
-    char buf1[5], buf2[5];
-    
-    sprintf(buf1, "%x", d);
-    sprintf(buf2, "%x", dir);
-
-    rs232_print(RS232_PORT_0, (char *) buf1);
-    rs232_print(RS232_PORT_0, " ");
-    rs232_print(RS232_PORT_0, (char *) buf2);
-    rs232_print(RS232_PORT_0, "\r\n");
-}
-
 static void writeReg (u1_t addr, u1_t data ) {
     hal_pin_nss(0);
     
     hal_spi(addr | 0x80);
-    //printData(addr, 0);
-    
     hal_spi(data);
-    //printData(data, 0);
     
-
     hal_pin_nss(1);
 }
 
 static u1_t readReg (u1_t addr) {
     hal_pin_nss(0);
+
     hal_spi(addr & 0x7F);
-   // printData(addr, 0);
-    
     u1_t val = hal_spi(0x00);
-    //printData(val, 1);
 
     hal_pin_nss(1);
     return val;
@@ -329,12 +292,10 @@ static u1_t readReg (u1_t addr) {
 static void writeBuf (u1_t addr, xref2u1_t buf, u1_t len) {
     hal_pin_nss(0);
     hal_spi(addr | 0x80);
-    //printData(addr, 0);
 
     u1_t i;
     for (i=0; i<len; i++) {
         hal_spi(buf[i]);
-        //printData(buf[i], 0);
     }
     hal_pin_nss(1);
 }
@@ -342,12 +303,10 @@ static void writeBuf (u1_t addr, xref2u1_t buf, u1_t len) {
 static void readBuf (u1_t addr, xref2u1_t buf, u1_t len) {
     hal_pin_nss(0);
     hal_spi(addr & 0x7F);
-    //printData(addr, 0);
 
     u1_t i;
     for (i=0; i<len; i++) {
         buf[i] = hal_spi(0x00);
-        //printData(buf[i], 1);
     }
     hal_pin_nss(1);
 }
@@ -471,11 +430,7 @@ static void configPower () {
 #elif CFG_sx1272_radio
     // set PA config (2-17 dBm using PA_BOOST)
     s1_t pw = (s1_t)LMIC.txpow;
-    //rs232_print(RS232_PORT_0, "required pw: ");
-    char buf[5];
-    sprintf(buf, "%d", pw);
-    //rs232_print(RS232_PORT_0, (char *) buf);
-    //rs232_print(RS232_PORT_0, "\r\n");
+
     if(pw > 17) {
         pw = 17;
     } else if(pw < 2) {
@@ -533,12 +488,8 @@ static void txfsk () {
 
 static void txlora () {
     // select LoRa modem (from sleep mode)
-    //writeReg(RegOpMode, OPMODE_LORA);
-    //rs232_print(RS232_PORT_0, "Begin txlora:\r\n");
-
     opmodeLora();
     
-
     ASSERT((readReg(RegOpMode) & OPMODE_LORA) != 0);
 
     // enter standby mode (required for FIFO loading))
@@ -564,22 +515,9 @@ static void txlora () {
     writeReg(LORARegFifoTxBaseAddr, 0x00);
     writeReg(LORARegFifoAddrPtr, 0x00);
     writeReg(LORARegPayloadLength, LMIC.dataLen);
-    
-    rs232_print(RS232_PORT_0, "Contents of LMIC.frame: ");
-    char buf2[5];
-    int i;
-    for (i=0; i<LMIC.dataLen; i++) {
-        sprintf(buf2, "%02x", LMIC.frame[i]);
-        rs232_print(RS232_PORT_0, (char *) buf2);
-        //printData(buf[i], 0);
-    }
-    rs232_print(RS232_PORT_0, "\r\n");
-    
 
     // download buffer to the radio FIFO
     writeBuf(RegFifo, LMIC.frame, LMIC.dataLen);
-
-
 
     // enable antenna switch for TX
     hal_pin_rxtx(1);
@@ -587,11 +525,7 @@ static void txlora () {
     // now we actually start the transmission
     opmode(OPMODE_TX);
 
-    //writeReg(RegOpMode, 0x83);
-
     readReg(LORARegHopChannel);
-
-    //rs232_print(RS232_PORT_0, "Finish txlora:\r\n");
 }
 
 // start transmitter (buf=LMIC.frame, len=LMIC.dataLen)
@@ -617,7 +551,6 @@ static const u1_t rxlorairqmask[] = {
 // start LoRa receiver (time=LMIC.rxtime, timeout=LMIC.rxsyms, result=LMIC.frame[LMIC.dataLen])
 static void rxlora (u1_t rxmode) {
     // select LoRa modem (from sleep mode)
-    rs232_print(RS232_PORT_0, "In rxlora!\r\n");
     opmodeLora();
 
     ASSERT((readReg(RegOpMode) & OPMODE_LORA) != 0);
@@ -634,8 +567,6 @@ static void rxlora (u1_t rxmode) {
         configChannel();
     }
 
-    //rs232_print(RS232_PORT_0, "In rxlora! 1.1 \r\n");
-
     // set LNA gain
     writeReg(RegLna, LNA_RX_GAIN); 
     // set max payload size
@@ -647,7 +578,6 @@ static void rxlora (u1_t rxmode) {
     // set sync word
     writeReg(LORARegSyncWord, LORA_MAC_PREAMBLE);
     
-    //rs232_print(RS232_PORT_0, "In rxlora! 1.2\r\n");
     // configure DIO mapping DIO0=RxDone DIO1=RxTout DIO2=NOP
     writeReg(RegDioMapping1, MAP_DIO0_LORA_RXDONE|MAP_DIO1_LORA_RXTOUT|MAP_DIO2_LORA_NOP);
     // clear all radio IRQ flags
@@ -655,46 +585,20 @@ static void rxlora (u1_t rxmode) {
     // enable required radio IRQs
     writeReg(LORARegIrqFlagsMask, ~rxlorairqmask[rxmode]);
 
-    //rs232_print(RS232_PORT_0, "In rxlora! 1.3\r\n");
     // enable antenna switch for RX
     hal_pin_rxtx(0);
 
-    //rs232_print(RS232_PORT_0, "In rxlora! 1.4\r\n");
     // now instruct the radio to receive
+    //NOTE: the clock sync is poor between the two devices so instead of using RXSingle (which is hard to get to search for the preamble at exactly the right time), we're using RX continuous and moving back to standby mode ourselves.
     if (rxmode == RXMODE_SINGLE) { // single rx
-        //hal_waitUntil(LMIC.rxtime); // busy wait until exact rx time
-        //rs232_print(RS232_PORT_0, "In rxlora! 1.5.1\r\n");
-        char buf1[20];
-        sprintf(buf1, "%lu", LMIC.rxtime - os_getTime());
-
-        char buf2[20];
-        sprintf(buf2, "%lu", LMIC.rxtime);
-
-        char buf3[20];
-        sprintf(buf3, "%lu", os_getTime());
-
-        rs232_print(RS232_PORT_0, "Wait for: ");
-        rs232_print(RS232_PORT_0, (char *) buf1);
-        rs232_print(RS232_PORT_0, "\r\n");
-
-        rs232_print(RS232_PORT_0, "Which is roughly: ");
-        rs232_print(RS232_PORT_0, (char *) buf2);
-        rs232_print(RS232_PORT_0, "\r\n");
-
-        rs232_print(RS232_PORT_0, "minus: ");
-        rs232_print(RS232_PORT_0, (char *) buf3);
-        rs232_print(RS232_PORT_0, "\r\n");
         hal_enableIRQs();
-        hal_wait(LMIC.rxtime - os_getTime()); //TODO: here's the problem
+        hal_wait(LMIC.rxtime - os_getTime()); 
         hal_disableIRQs();
-        //rs232_print(RS232_PORT_0, "In rxlora! 1.5.2\r\n");
         opmode(OPMODE_RX_SINGLE);
+
     } else { // continous rx (scan or rssi)
-        //rs232_print(RS232_PORT_0, "In rxlora! 1.5.3\r\n");
         opmode(OPMODE_RX); 
-        //rs232_print(RS232_PORT_0, "In rxlora! 1.5.4\r\n");
     }
-    //rs232_print(RS232_PORT_0, "Leave rxlora!\r\n");
 }
 
 static void rxfsk (u1_t rxmode) {
@@ -763,99 +667,23 @@ static void startrx (u1_t rxmode) {
 // get random seed from wideband noise rssi
 void radio_init () {
 
-    //rs232_print(RS232_PORT_0, "1\r\n");
-    //hal_disableIRQs();
-
+    //NOTE: this is a much more simplified version than in the original LMIC.
+    //We're not using RSSI for the random number
+    //and we're not using the sx1276
+    //so almost everything was removed here. 
     opmode(OPMODE_SLEEP);
 
     // some sanity checks, e.g., read version number
     u1_t v = readReg(RegVersion);
     if(v != 0x22)   rs232_print(RS232_PORT_0, "Error: missing sx1272 radio\r\n");                
-    
-/*#ifdef CFG_sx1276_radio
-    ASSERT(v == 0x12 ); 
-#elif CFG_sx1272_radio
-    ASSERT(v == 0x22);
-#else
-#error Missing CFG_sx1272_radio/CFG_sx1276_radio
-#endif*/
-
-    //rs232_print(RS232_PORT_0, "2\r\n");
-
-    //Not using randbuf now
-    // seed 15-byte randomness via noise rssi
-    //rxlora(RXMODE_RSSI);
-
-    //rs232_print(RS232_PORT_0, "3\r\n");
-
-    //rs232_print(RS232_PORT_0, "3\r\n");
-    //while( (readReg(RegOpMode) & OPMODE_MASK) != OPMODE_RX ); // continuous rx
-
-    //rs232_print(RS232_PORT_0, "4\r\n");
-
-    /*int i, j;
-    for(i=1; i<16; i++) {
-        for(j=0; j<8; j++) {
-            u1_t b; // wait for two non-identical subsequent least-significant bits
-            while( (b = readReg(LORARegRssiWideband) & 0x01) == (readReg(LORARegRssiWideband) & 0x01) );
-            randbuf[i] = (randbuf[i] << 1) | b;
-        }
-    }
-    randbuf[0] = 16; // set initial index
-
-
-    rs232_print(RS232_PORT_0, "3\r\n");*/
-
-    // only using sx1272
-/*#ifdef CFG_sx1276_radio	//CFG_sx1276mb1_board
-    rs232_print(RS232_PORT_0, "In here\r\n");
-    // chain calibration
-    writeReg(RegPaConfig, 0);
-    
-    // Launch Rx chain calibration for LF band
-    writeReg(FSKRegImageCal, (readReg(FSKRegImageCal) & RF_IMAGECAL_IMAGECAL_MASK)|RF_IMAGECAL_IMAGECAL_START);
-    while((readReg(FSKRegImageCal)&RF_IMAGECAL_IMAGECAL_RUNNING) == RF_IMAGECAL_IMAGECAL_RUNNING){ ; }
-
-    // Sets a Frequency in HF band
-    u4_t frf = 868000000;
-    writeReg(RegFrfMsb, (u1_t)(frf>>16));
-    writeReg(RegFrfMid, (u1_t)(frf>> 8));
-    writeReg(RegFrfLsb, (u1_t)(frf>> 0));
-
-    rs232_print(RS232_PORT_0, "In here too\r\n");
-    // Launch Rx chain calibration for HF band 
-    writeReg(FSKRegImageCal, (readReg(FSKRegImageCal) & RF_IMAGECAL_IMAGECAL_MASK)|RF_IMAGECAL_IMAGECAL_START);
-    while((readReg(FSKRegImageCal) & RF_IMAGECAL_IMAGECAL_RUNNING) == RF_IMAGECAL_IMAGECAL_RUNNING) { ; }
-#endif *//* CFG_sx1276_radio	//CFG_sx1276mb1_board */
-
-    //opmode(OPMODE_SLEEP);
-
-
-    //rs232_print(RS232_PORT_0, "5\r\n");
-
-    //_delay_ms(10000);
-    //hal_enableIRQs();
-
-    //rs232_print(RS232_PORT_0, "6\r\n");
 }
 
 // return next random byte derived from seed buffer
-// (buf[0] holds index of next byte to be returned)
 u1_t radio_rand1 () {
     //for some reason this only ever gives the same two random numbers - 2dff and d200
     //changing it to use general avr rand function
 
-    /*u1_t i = randbuf[0];
-    ASSERT( i != 0 );
-    if( i==16 ) {
-        os_aes(AES_ENC, randbuf, 16); // encrypt seed with any key
-        i = 0;
-    }
-    u1_t v = randbuf[i++];
-    randbuf[0] = i;
-    return v;*/
-
-    int r = rand() % 255; // not actually that random, but random enough for our purposes (I think - is this function used in the crypto??)
+    int r = rand() % 255; // not actually that random, but random enough for our purposes
     u1_t v = (u1_t) r; 
 
     return v;
@@ -881,15 +709,11 @@ static const u2_t LORA_RXDONE_FIXUP[] = {
 // called by hal ext IRQ handler
 // (radio goes to stanby mode after tx/rx operations)
 void radio_irq_handler (u1_t dio) {
-    //DIO isn't used?
-    rs232_print(RS232_PORT_0, "In IRQ handler!\r\n");
 
     ostime_t now = os_getTime();
     if( (readReg(RegOpMode) & OPMODE_LORA) != 0) { // LORA modem
-        //rs232_print(RS232_PORT_0, "Receive LoRa!\r\n");
         u1_t flags = readReg(LORARegIrqFlags);
         if( flags & IRQ_LORA_TXDONE_MASK ) {
-            rs232_print(RS232_PORT_0, "LoRa TXDONE mask!\r\n");
             // save exact tx time
             LMIC.txend = now - us2osticks(43); // TXDONE FIXUP
         } else if( flags & IRQ_LORA_RXDONE_MASK ) {
@@ -899,26 +723,15 @@ void radio_irq_handler (u1_t dio) {
             }
             LMIC.rxtime = now;
 
-            rs232_print(RS232_PORT_0, "Reading!\r\n");
             // read the PDU and inform the MAC that we received something
             LMIC.dataLen = (readReg(LORARegModemConfig1) & SX1272_MC1_IMPLICIT_HEADER_MODE_ON) ?
                 readReg(LORARegPayloadLength) : readReg(LORARegRxNbBytes);
-
 
             // set FIFO read address pointer
             writeReg(LORARegFifoAddrPtr, readReg(LORARegFifoRxCurrentAddr)); 
             // now read the FIFO
             readBuf(RegFifo, LMIC.frame, LMIC.dataLen);
 
-            int i;
-            char buf[20];
-            rs232_print(RS232_PORT_0, "Full packet from irq handler:");
-            for(i=0;i<LMIC.dataLen;i++){
-                sprintf(buf, "%02x", LMIC.frame[i]);
-                rs232_print(RS232_PORT_0, (char *) buf);
-                rs232_print(RS232_PORT_0, " ");
-            }
-            rs232_print(RS232_PORT_0, "\r\n");
             // read rx quality parameters
             LMIC.snr  = readReg(LORARegPktSnrValue); // SNR [dB] * 4
             LMIC.rssi = readReg(LORARegPktRssiValue) - 125 + 64; // RSSI [dBm] (-196...+63)
@@ -929,24 +742,9 @@ void radio_irq_handler (u1_t dio) {
 
         } else if( flags & IRQ_LORA_RXTOUT_MASK ) {
             // indicate timeout
-            rs232_print(RS232_PORT_0, "Timeout :(\r\n");
             LMIC.dataLen = 0;
         }
-        else{
-            rs232_print(RS232_PORT_0, "None of the above?? \r\n flags: ");
-            char buf[20];
-            sprintf(buf, "%d", flags);
-            rs232_print(RS232_PORT_0, (char *) buf);
-            rs232_print(RS232_PORT_0, "\r\n");
-
-            if(flags == 0x21){
-                writeReg(LORARegIrqFlags, 0x21);     
-            }
-            
-
-            //opmode(OPMODE_SLEEP); //DONT call the set function at the end
-            //return;
-        }
+    
         // mask all radio IRQs
         writeReg(LORARegIrqFlagsMask, 0xFF);
         // clear radio IRQ flags
@@ -957,36 +755,7 @@ void radio_irq_handler (u1_t dio) {
         u1_t flags1 = readReg(FSKRegIrqFlags1);
         u1_t flags2 = readReg(FSKRegIrqFlags2);
 
-        rs232_print(RS232_PORT_0, "FSK mode!\r\n");
-        char buf[16];
-        rs232_print(RS232_PORT_0, "None of the above?? \r\n regopmode: ");
-         sprintf(buf, "%02x", readReg(RegOpMode));
-        rs232_print(RS232_PORT_0, (char *) buf);
-        rs232_print(RS232_PORT_0, "\r\n");
-        
-
-        rs232_print(RS232_PORT_0, "None of the above?? \r\n flags: ");
-        sprintf(buf, "%02x", flags1);
-        rs232_print(RS232_PORT_0, (char *) buf);
-        rs232_print(RS232_PORT_0, "\r\n");
-
-        rs232_print(RS232_PORT_0, "None of the above?? \r\n flags: ");
-        sprintf(buf, "%02x", flags2);
-        rs232_print(RS232_PORT_0, (char *) buf);
-        rs232_print(RS232_PORT_0, "\r\n");
-
-        if((readReg(RegOpMode) & 0x07) | (readReg(RegOpMode) & 0x06)){
-            rs232_print(RS232_PORT_0, "Reached undefined reserved fsk mode.\r\n");
-            //opmode(OPMODE_SLEEP);
-
-             // mask all radio IRQs
-            //writeReg(LORARegIrqFlagsMask, 0xFF);
-            // clear radio IRQ flags
-            writeReg(FSKRegIrqFlags1, 0xFF);
-            writeReg(FSKRegIrqFlags2, 0xFF);
-            //return;
-        }
-        else if( flags2 & IRQ_FSK2_PACKETSENT_MASK ) {
+        if( flags2 & IRQ_FSK2_PACKETSENT_MASK ) {
             // save exact tx time
             LMIC.txend = now;
         } else if( flags2 & IRQ_FSK2_PAYLOADREADY_MASK ) {
@@ -1010,11 +779,7 @@ void radio_irq_handler (u1_t dio) {
     // go from stanby to sleep
     opmode(OPMODE_SLEEP);
     // run os job (use preset func ptr)
-    //rs232_print(RS232_PORT_0, "Calling set func.\r\n");
-
-    //os_setCallback(&LMIC.osjob, LMIC.osjob.func);
     if(LMIC.osjob.func){
-        rs232_print(RS232_PORT_0, "Calling func.\r\n");
         os_setCallback(&LMIC.osjob, LMIC.osjob.func);
         LMIC.osjob.func = NULL;
     }
@@ -1022,7 +787,6 @@ void radio_irq_handler (u1_t dio) {
 }
 
 void os_radio (u1_t mode) {
-    //rs232_print(RS232_PORT_0, "Transmitting!\r\n");
     hal_disableIRQs();
     switch (mode) {
       case RADIO_RST:

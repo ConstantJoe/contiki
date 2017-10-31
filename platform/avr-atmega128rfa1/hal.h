@@ -84,8 +84,4 @@ void hal_wait (u4_t time);
  */
 void hal_failed (void);
 
-//void hal_io_init (void);
-
-//void hal_spi_init (void);
-
 #endif // _hal_hpp_

@@ -17,15 +17,11 @@
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
-#include <util/delay.h>
 
 #include <stdio.h>
 #include <string.h>
 
 #include "sys/clock.h"
-#include "sys/etimer.h"
-
-#include "dev/rs232.h"
 
 // -----------------------------------------------------------------------------
 // I/O
@@ -58,14 +54,7 @@ char dest[20];
 // val ==1  => tx 1, rx 0 ; val == 0 => tx 0, rx 1
 void hal_pin_rxtx (u1_t val)
 {
-	/*if(val) {
-		PORT |=  (1<<PIN_SPI_TX_SWITCH);
-		PORT &= ~(1<<PIN_SPI_RX_SWITCH);
-	}
-	else {
-		PORT &= ~(1<<PIN_SPI_TX_SWITCH);
-		PORT |=  (1<<PIN_SPI_RX_SWITCH);
-	}*/
+	//not needed
 }
 
 // set radio NSS pin to given value
@@ -82,7 +71,7 @@ void hal_pin_nss (u1_t val)
 // set radio RST pin to given value (or keep floating!)
 void hal_pin_rst (u1_t val)
 {
-	//Not needed (hopefully!)
+	//not needed
 }
 
 extern void radio_irq_handler(u1_t dio);
@@ -90,27 +79,16 @@ extern void radio_irq_handler(u1_t dio);
 // handle data from DIO0 and DIO1 via a hardware interrupt
 // the Pin Change Interrupt PCI0 will trigger if any enabled PCINT7:0 pin toggles
 // so inside the interrupt we figure out which pin made it fire
-
 volatile uint8_t portbhistory = 0xFF;     // default is high because the pull-up
 
 ISR(PCINT0_vect)
 {	
-	
-	//routine doesn't care which pin it came from
-
 	uint8_t changedbits;
-
 
     changedbits = PINB ^ portbhistory;
     portbhistory = PINB;
 
-	char buf1[20];
-    sprintf(buf1, "%02x", changedbits);
-
-    rs232_print(RS232_PORT_0, "PCINT0_vect:\r\n");
-    rs232_print(RS232_PORT_0, (char *) buf1);
-    rs232_print(RS232_PORT_0, "\r\n");
-
+    //routine doesn't care which pin it came from
     if(changedbits & (1 << PINB6) | changedbits & (1 << PINB7))
     {
         /* PCINT0 changed */
@@ -123,7 +101,6 @@ ISR(PCINT0_vect)
 // perform SPI transaction with radio
 u1_t hal_spi (u1_t out)
 {
-
 	SPDR = out; // init slave spi
 	while (!(SPSR && (1<<SPIF))); // wait for tx done
 	u1_t in = SPDR;
