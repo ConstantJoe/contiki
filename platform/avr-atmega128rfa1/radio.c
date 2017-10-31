@@ -11,6 +11,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <util/delay.h>
 #include "lmic.h"
 
 #include "dev/rs232.h"
@@ -762,33 +763,35 @@ static void startrx (u1_t rxmode) {
 // get random seed from wideband noise rssi
 void radio_init () {
 
-    rs232_print(RS232_PORT_0, "1\r\n");
-    hal_disableIRQs();
+    //rs232_print(RS232_PORT_0, "1\r\n");
+    //hal_disableIRQs();
 
     opmode(OPMODE_SLEEP);
 
     // some sanity checks, e.g., read version number
     u1_t v = readReg(RegVersion);
-#ifdef CFG_sx1276_radio
+    if(v != 0x22)   rs232_print(RS232_PORT_0, "Error: missing sx1272 radio\r\n");                
+    
+/*#ifdef CFG_sx1276_radio
     ASSERT(v == 0x12 ); 
 #elif CFG_sx1272_radio
     ASSERT(v == 0x22);
 #else
 #error Missing CFG_sx1272_radio/CFG_sx1276_radio
-#endif
+#endif*/
 
-    rs232_print(RS232_PORT_0, "2\r\n");
+    //rs232_print(RS232_PORT_0, "2\r\n");
 
     //Not using randbuf now
     // seed 15-byte randomness via noise rssi
     //rxlora(RXMODE_RSSI);
 
-    rs232_print(RS232_PORT_0, "3\r\n");
+    //rs232_print(RS232_PORT_0, "3\r\n");
 
     //rs232_print(RS232_PORT_0, "3\r\n");
     //while( (readReg(RegOpMode) & OPMODE_MASK) != OPMODE_RX ); // continuous rx
 
-    rs232_print(RS232_PORT_0, "4\r\n");
+    //rs232_print(RS232_PORT_0, "4\r\n");
 
     /*int i, j;
     for(i=1; i<16; i++) {
@@ -803,7 +806,9 @@ void radio_init () {
 
     rs232_print(RS232_PORT_0, "3\r\n");*/
 
-#ifdef CFG_sx1276_radio	//CFG_sx1276mb1_board
+    // only using sx1272
+/*#ifdef CFG_sx1276_radio	//CFG_sx1276mb1_board
+    rs232_print(RS232_PORT_0, "In here\r\n");
     // chain calibration
     writeReg(RegPaConfig, 0);
     
@@ -817,19 +822,21 @@ void radio_init () {
     writeReg(RegFrfMid, (u1_t)(frf>> 8));
     writeReg(RegFrfLsb, (u1_t)(frf>> 0));
 
+    rs232_print(RS232_PORT_0, "In here too\r\n");
     // Launch Rx chain calibration for HF band 
     writeReg(FSKRegImageCal, (readReg(FSKRegImageCal) & RF_IMAGECAL_IMAGECAL_MASK)|RF_IMAGECAL_IMAGECAL_START);
     while((readReg(FSKRegImageCal) & RF_IMAGECAL_IMAGECAL_RUNNING) == RF_IMAGECAL_IMAGECAL_RUNNING) { ; }
-#endif /* CFG_sx1276_radio	//CFG_sx1276mb1_board */
+#endif *//* CFG_sx1276_radio	//CFG_sx1276mb1_board */
 
-    opmode(OPMODE_SLEEP);
+    //opmode(OPMODE_SLEEP);
 
 
-    rs232_print(RS232_PORT_0, "5\r\n");
+    //rs232_print(RS232_PORT_0, "5\r\n");
 
-    hal_enableIRQs();
+    //_delay_ms(10000);
+    //hal_enableIRQs();
 
-    rs232_print(RS232_PORT_0, "6\r\n");
+    //rs232_print(RS232_PORT_0, "6\r\n");
 }
 
 // return next random byte derived from seed buffer
@@ -926,11 +933,16 @@ void radio_irq_handler (u1_t dio) {
             LMIC.dataLen = 0;
         }
         else{
-            /*rs232_print(RS232_PORT_0, "None of the above?? \r\n flags: ");
+            rs232_print(RS232_PORT_0, "None of the above?? \r\n flags: ");
             char buf[20];
             sprintf(buf, "%d", flags);
             rs232_print(RS232_PORT_0, (char *) buf);
-            rs232_print(RS232_PORT_0, "\r\n");*/
+            rs232_print(RS232_PORT_0, "\r\n");
+
+            if(flags == 0x21){
+                writeReg(LORARegIrqFlags, 0x21);     
+            }
+            
 
             //opmode(OPMODE_SLEEP); //DONT call the set function at the end
             //return;
@@ -940,10 +952,41 @@ void radio_irq_handler (u1_t dio) {
         // clear radio IRQ flags
         writeReg(LORARegIrqFlags, 0xFF);
         //rs232_print(RS232_PORT_0, "After the if!\r\n");
-    } else { // FSK modem
+    } 
+    else{ // FSK modem
         u1_t flags1 = readReg(FSKRegIrqFlags1);
         u1_t flags2 = readReg(FSKRegIrqFlags2);
-        if( flags2 & IRQ_FSK2_PACKETSENT_MASK ) {
+
+        rs232_print(RS232_PORT_0, "FSK mode!\r\n");
+        char buf[16];
+        rs232_print(RS232_PORT_0, "None of the above?? \r\n regopmode: ");
+         sprintf(buf, "%02x", readReg(RegOpMode));
+        rs232_print(RS232_PORT_0, (char *) buf);
+        rs232_print(RS232_PORT_0, "\r\n");
+        
+
+        rs232_print(RS232_PORT_0, "None of the above?? \r\n flags: ");
+        sprintf(buf, "%02x", flags1);
+        rs232_print(RS232_PORT_0, (char *) buf);
+        rs232_print(RS232_PORT_0, "\r\n");
+
+        rs232_print(RS232_PORT_0, "None of the above?? \r\n flags: ");
+        sprintf(buf, "%02x", flags2);
+        rs232_print(RS232_PORT_0, (char *) buf);
+        rs232_print(RS232_PORT_0, "\r\n");
+
+        if((readReg(RegOpMode) & 0x07) | (readReg(RegOpMode) & 0x06)){
+            rs232_print(RS232_PORT_0, "Reached undefined reserved fsk mode.\r\n");
+            //opmode(OPMODE_SLEEP);
+
+             // mask all radio IRQs
+            //writeReg(LORARegIrqFlagsMask, 0xFF);
+            // clear radio IRQ flags
+            writeReg(FSKRegIrqFlags1, 0xFF);
+            writeReg(FSKRegIrqFlags2, 0xFF);
+            //return;
+        }
+        else if( flags2 & IRQ_FSK2_PACKETSENT_MASK ) {
             // save exact tx time
             LMIC.txend = now;
         } else if( flags2 & IRQ_FSK2_PAYLOADREADY_MASK ) {
@@ -963,6 +1006,7 @@ void radio_irq_handler (u1_t dio) {
             while(1);
         }
     }
+
     // go from stanby to sleep
     opmode(OPMODE_SLEEP);
     // run os job (use preset func ptr)
@@ -970,6 +1014,7 @@ void radio_irq_handler (u1_t dio) {
 
     //os_setCallback(&LMIC.osjob, LMIC.osjob.func);
     if(LMIC.osjob.func){
+        rs232_print(RS232_PORT_0, "Calling func.\r\n");
         os_setCallback(&LMIC.osjob, LMIC.osjob.func);
         LMIC.osjob.func = NULL;
     }

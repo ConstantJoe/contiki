@@ -17,7 +17,7 @@
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
-
+#include <util/delay.h>
 
 #include <stdio.h>
 #include <string.h>
@@ -30,16 +30,16 @@
 // -----------------------------------------------------------------------------
 // I/O
 #if defined RFA1
-	#define DDR 			DDRB
-	#define PORT 			PORTB	
-	#define PIN_DIO0		PB7	
-	#define PIN_DIO1		PB6	
+	#define DDR 					DDRB
+	#define PORT 					PORTB	
+	#define PIN_DIO0				PB7	
+	#define PIN_DIO1				PB6	
 	#define PIN_SPI_MOSI            PB2			
 	#define PIN_SPI_MISO            PB3			
 	#define PIN_SPI_CLK             PB1			
 	#define PIN_SPI_CS              PB0
-	#define PIN_SPI_RX_SWITCH	PB4 	
-	#define PIN_SPI_TX_SWITCH 	PB5		 
+	#define PIN_SPI_RX_SWITCH		PB4 	
+	#define PIN_SPI_TX_SWITCH 		PB5		 
 #else
 #error Missing board!
 #endif
@@ -58,7 +58,6 @@ char dest[20];
 // val ==1  => tx 1, rx 0 ; val == 0 => tx 0, rx 1
 void hal_pin_rxtx (u1_t val)
 {
-	//test: seeing if it works without this
 	/*if(val) {
 		PORT |=  (1<<PIN_SPI_TX_SWITCH);
 		PORT &= ~(1<<PIN_SPI_RX_SWITCH);
@@ -91,46 +90,32 @@ extern void radio_irq_handler(u1_t dio);
 // handle data from DIO0 and DIO1 via a hardware interrupt
 // the Pin Change Interrupt PCI0 will trigger if any enabled PCINT7:0 pin toggles
 // so inside the interrupt we figure out which pin made it fire
+
+volatile uint8_t portbhistory = 0xFF;     // default is high because the pull-up
+
 ISR(PCINT0_vect)
 {	
-	//rs232_print(RS232_PORT_0, "Interrupt!\r\n");
+	
 	//routine doesn't care which pin it came from
-	radio_irq_handler(0);
-	/*char buf[20];
-   	sprintf(buf, "%u", PINB);
-   	rs232_print(RS232_PORT_0, "PINB: ");
-   	rs232_print(RS232_PORT_0, (char *) buf);
-	rs232_print(RS232_PORT_0, "\r\n");
 
-	char buf2[20];
-   	sprintf(buf2, "%u", (1 << PIN_DIO0));
-   	rs232_print(RS232_PORT_0, "PIN_DIO0: ");
-   	rs232_print(RS232_PORT_0, (char *) buf2);
-	rs232_print(RS232_PORT_0, "\r\n");
+	uint8_t changedbits;
 
-	char buf3[20];
-   	sprintf(buf3, "%u", (1 << PIN_DIO1));
-   	rs232_print(RS232_PORT_0, "PIN_DIO1: ");
-   	rs232_print(RS232_PORT_0, (char *) buf3);
-	rs232_print(RS232_PORT_0, "\r\n");
 
-	rs232_print(RS232_PORT_0, "Interrupt!\r\n");
-	u1_t changed_bits;
+    changedbits = PINB ^ portbhistory;
+    portbhistory = PINB;
 
-	changed_bits = PINB ^ port_b_old;
-    port_b_old = PINB;
+	char buf1[20];
+    sprintf(buf1, "%02x", changedbits);
 
-    rs232_print(RS232_PORT_0, "Fiddled with port B !\r\n");
+    rs232_print(RS232_PORT_0, "PCINT0_vect:\r\n");
+    rs232_print(RS232_PORT_0, (char *) buf1);
+    rs232_print(RS232_PORT_0, "\r\n");
 
-    if(changed_bits & (1 << PIN_DIO0)){
-    	rs232_print(RS232_PORT_0, "PIO0!\r\n");
-		radio_irq_handler(0);	
-	}
-
-	if(changed_bits & (1 << PIN_DIO1)){
-		rs232_print(RS232_PORT_0, "PIO1!\r\n");
-		radio_irq_handler(1);
-	}*/
+    if(changedbits & (1 << PINB6) | changedbits & (1 << PINB7))
+    {
+        /* PCINT0 changed */
+    	radio_irq_handler(1);
+    }
 }
 
 
@@ -157,25 +142,8 @@ u4_t hal_ticks ()
 
 
 void hal_waitUntil (u4_t time)
-{
-	//TODO: Sometimes crashes here
-	sei();
-
-	//char buf[20];
-	
+{	
 	u4_t ctime = hal_ticks();
-
-	/*rs232_print(RS232_PORT_0, "Time target is  ");
-	sprintf(buf, "%lu", time);
-	rs232_print(RS232_PORT_0, (char *) buf);
-	rs232_print(RS232_PORT_0, " ticks\r\n");
-	
-	
-	rs232_print(RS232_PORT_0, "Current time is ");
-    char buf2[20];
-    sprintf(buf2, "%lu", ctime);
-    rs232_print(RS232_PORT_0, (char *)buf2);
-    rs232_print(RS232_PORT_0, " ticks.\r\n");*/
 
     u4_t t;
     if(ctime > time){
@@ -184,16 +152,10 @@ void hal_waitUntil (u4_t time)
        t = time - ctime;
     }
 
-    /*rs232_print(RS232_PORT_0, "So wait time is ");
-    char buf3[20];
-    sprintf(buf3, "%lu", t);
-    rs232_print(RS232_PORT_0, (char *)buf3);
-    rs232_print(RS232_PORT_0, " ticks.\r\n");*/
-	clock_wait(t);
+    hal_wait(t);
 }
 
 void hal_wait (u4_t time){
-	//sei();
 	clock_wait(time);
 }  
 
@@ -226,9 +188,9 @@ void lmic_hal_init ()
 	hal_disableIRQs();
     memset(&HAL, 0x00, sizeof(HAL));
    
-   //set DIO input pins
-	DDR &= ~(1<<PB7);
-	DDR &= ~(1<<PB6);
+    //set DIO input pins
+	DDRB &= ~(1<<PB7);
+	DDRB &= ~(1<<PB6);
  
  	//enable Pin Change interrupts on PB7 and PB6.
 	PCMSK0 |= (1 << PCINT7);
@@ -246,6 +208,8 @@ void lmic_hal_init ()
 	//SPCR  = (1<<SPE) | (1<<MSTR) | (1<<SPR0); // SPI Control Register, clk/16=500kHz
 	SPCR  = (1<<SPE) | (1<<MSTR) | (1<<SPR0) | (1<<SPR1); //slow down  clock rate further
 	SPSR |= (1<<SPIF); // Clear int flag
+
+	hal_enableIRQs();
 }
 
 void hal_failed ()
