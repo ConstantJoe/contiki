@@ -17,6 +17,8 @@
 #include <stdio.h>
 #include <math.h>
 
+#include "dev/rs232.h"
+
 #if !defined(MINRX_SYMS)
 #define MINRX_SYMS 5
 #endif // !defined(MINRX_SYMS)
@@ -683,7 +685,7 @@ static const u4_t iniChannelFreq[12] = {
     EU868_F4|BAND_MILLI, EU868_F5|BAND_MILLI, EU868_F6|BAND_DECI
 };
 
-static void initDefaultChannels (bit_t join) {
+ void initDefaultChannels (bit_t join) {
     os_clearMem(&LMIC.channelFreq, sizeof(LMIC.channelFreq));
     os_clearMem(&LMIC.channelDrMap, sizeof(LMIC.channelDrMap));
     os_clearMem(&LMIC.bands, sizeof(LMIC.bands));
@@ -774,6 +776,7 @@ static u1_t mapChannels (u1_t chpage, u2_t chmap) {
 
 
 static void updateTx (ostime_t txbeg) {
+    rs232_print(RS232_PORT_0, "updateTx\r\n");
     u4_t freq = LMIC.channelFreq[LMIC.txChnl];
     // Update global/band specific duty cycle stats
     ostime_t airtime = calcAirTime(LMIC.rps, LMIC.dataLen);
@@ -781,7 +784,8 @@ static void updateTx (ostime_t txbeg) {
     // Update channel/global duty cycle stats
     xref2band_t band = &LMIC.bands[freq & 0x3];
     LMIC.freq  = freq & ~(u4_t)3;
-    LMIC.txpow = band->txpow;
+    //LMIC.txpow = band->txpow;
+    //LMIC.txpow = band->txpow; //NOTE: removing this to enable changing of tx power in main
     band->avail = txbeg + airtime * band->txcap;
     if( LMIC.globalDutyRate != 0 )
         LMIC.globalDutyAvail = txbeg + (airtime<<LMIC.globalDutyRate);
@@ -1339,12 +1343,13 @@ static bit_t decodeFrame (void) {
 
 
 static void setupRx2 (void) {
+    rs232_print(RS232_PORT_0, "in setupRx2\r\n");
     LMIC.txrxFlags = TXRX_DNW2;
     LMIC.rps = dndr2rps(LMIC.dn2Dr);
     LMIC.freq = LMIC.dn2Freq;
     LMIC.dataLen = 0;
-    os_radio(RADIO_RXON); //TODO: changing this to be constantly on.
-    //os_radio(RADIO_RX);
+    //os_radio(RADIO_RXON); //TODO: changing this back.
+    os_radio(RADIO_RX);
 }
 
 
@@ -1355,13 +1360,28 @@ static void schedRx2 (ostime_t delay, osjobcb_t func) {
     os_setTimedCallback(&LMIC.osjob, LMIC.rxtime - RX_RAMPUP, func);
 }
 
+//fw declaration
+static void processRx1Jacc (xref2osjob_t osjob);
+
 static void setupRx1 (osjobcb_t func) {
+    rs232_print(RS232_PORT_0, "in setup rx1\r\n");
     LMIC.txrxFlags = TXRX_DNW1;
     // Turn LMIC.rps from TX over to RX
     LMIC.rps = setNocrc(LMIC.rps,1);
     LMIC.dataLen = 0;
     LMIC.osjob.func = func;
-    os_radio(RADIO_RXON); //TODO: changing this to be constantly on.
+    // //TODO: changing this to be constantly on.
+     //TODO: changing this to be constantly on.
+    if(func == FUNC_ADDR(processRx1Jacc))
+    {    
+        rs232_print(RS232_PORT_0, "join rx\r\n");
+        os_radio(RADIO_RXON);
+    }
+    else
+    {
+        rs232_print(RS232_PORT_0, "regular rx\r\n");
+        os_radio(RADIO_RX);
+    }
 }
 
 
@@ -1487,6 +1507,7 @@ static bit_t processJoinAccept (void) {
 
 
 static void processRx2Jacc (xref2osjob_t osjob) {
+    rs232_print(RS232_PORT_0, "in processRx2Jacc\r\n");
     if( LMIC.dataLen == 0 )
         LMIC.txrxFlags = 0;  // nothing in 1st/2nd DN slot
     processJoinAccept();
@@ -1494,23 +1515,27 @@ static void processRx2Jacc (xref2osjob_t osjob) {
 
 
 static void setupRx2Jacc (xref2osjob_t osjob) {
+    rs232_print(RS232_PORT_0, "in setupRx2Jacc\r\n");
     LMIC.osjob.func = FUNC_ADDR(processRx2Jacc);
     setupRx2();
 }
 
 
 static void processRx1Jacc (xref2osjob_t osjob) {
+    rs232_print(RS232_PORT_0, "in processRx1Jacc\r\n");
     if( LMIC.dataLen == 0 || !processJoinAccept() )
         schedRx2(DELAY_JACC2_osticks, FUNC_ADDR(setupRx2Jacc));
 }
 
 
 static void setupRx1Jacc (xref2osjob_t osjob) {
+    rs232_print(RS232_PORT_0, "in setupRx1Jacc\r\n");
     setupRx1(FUNC_ADDR(processRx1Jacc));
 }
 
 
 static void jreqDone (xref2osjob_t osjob) {
+    rs232_print(RS232_PORT_0, "in jreqDone\r\n");
     txDone(0, FUNC_ADDR(setupRx1Jacc)); //NOTE: shortening this to be immediate instead of 5 seconds.
     //txDone(DELAY_JACC1_osticks, FUNC_ADDR(setupRx1Jacc));
 }
@@ -1521,49 +1546,58 @@ static void jreqDone (xref2osjob_t osjob) {
 static bit_t processDnData(void);
 
 static void processRx2DnDataDelay (xref2osjob_t osjob) {
+    rs232_print(RS232_PORT_0, "in processRx2DnDataDelay\r\n");
     processDnData();
 }
 
 static void processRx2DnData (xref2osjob_t osjob) {
-    if( LMIC.dataLen == 0 ) {
+    rs232_print(RS232_PORT_0, "in processRx2DnData\r\n");
+    /*if( LMIC.dataLen == 0 ) {
         LMIC.txrxFlags = 0;  // nothing in 1st/2nd DN slot
         // Delay callback processing to avoid up TX while gateway is txing our missed frame! 
         // Since DNW2 uses SF12 by default we wait 3 secs.
+
+        // Joe: Removing this as it doesn't make sense for unconfirmed frames? 
         os_setTimedCallback(&LMIC.osjob,
                             (os_getTime() + DNW2_SAFETY_ZONE + rndDelay(2)),
                             processRx2DnDataDelay);
         return;
-    }
+    }*/
     processDnData();
 }
 
 
 static void setupRx2DnData (xref2osjob_t osjob) {
+    rs232_print(RS232_PORT_0, "in setupRx2DnData\r\n");
     LMIC.osjob.func = FUNC_ADDR(processRx2DnData);
     setupRx2();
 }
 
 
 static void processRx1DnData (xref2osjob_t osjob) {
+    rs232_print(RS232_PORT_0, "in processRx1DnData\r\n");
     if( LMIC.dataLen == 0 || !processDnData() )
         schedRx2(DELAY_DNW2_osticks, FUNC_ADDR(setupRx2DnData));
 }
 
 
-static void setupRx1DnData (xref2osjob_t osjob) {;
+static void setupRx1DnData (xref2osjob_t osjob) {
+    rs232_print(RS232_PORT_0, "in setuprx1dndata\r\n");
     setupRx1(FUNC_ADDR(processRx1DnData));
 }
 
 
 static void updataDone (xref2osjob_t osjob) {
-    txDone(0, FUNC_ADDR(setupRx1DnData)); //Note: changed here. Looks like we keep missing the interrupt.
-    //txDone(DELAY_DNW1_osticks, FUNC_ADDR(setupRx1DnData));
+    rs232_print(RS232_PORT_0, "in updatadone\r\n");
+    //txDone(0, FUNC_ADDR(setupRx1DnData)); //Note: changed here. Looks like we keep missing the interrupt.
+    txDone(DELAY_DNW1_osticks, FUNC_ADDR(setupRx1DnData));
 }
 
 // ======================================== 
 
 
 static void buildDataFrame (void) {
+    rs232_print(RS232_PORT_0, "buildDataFrame\r\n");
     bit_t txdata = ((LMIC.opmode & (OP_TXDATA|OP_POLL)) != OP_POLL);
     u1_t dlen = txdata ? LMIC.pendTxLen : 0;
 
@@ -1800,12 +1834,14 @@ static void processPingRx (xref2osjob_t osjob) {
 #endif
 
 static bit_t processDnData (void) {
+     rs232_print(RS232_PORT_0, "in processdndata\r\n");
     ASSERT((LMIC.opmode & OP_TXRXPEND)!=0);
 
     if( LMIC.dataLen == 0 ) {
       norx:
         if( LMIC.txCnt != 0 ) {
             if( LMIC.txCnt < TXCONF_ATTEMPTS ) {
+                rs232_print(RS232_PORT_0, "try transmit again!\r\n");
                 LMIC.txCnt += 1;
                 setDrTxpow(DRCHG_NOACK, lowerDR(LMIC.datarate, DRADJUST[LMIC.txCnt]), KEEP_TXPOW);
                 // Schedule another retransmission
@@ -1834,6 +1870,7 @@ static bit_t processDnData (void) {
         if( LMIC.adrAckReq > LINK_CHECK_DEAD ) {
             // We haven't heard from NWK for some time although we
             // asked for a response for some time - assume we're disconnected. Lower DR one notch.
+            rs232_print(RS232_PORT_0, "calling set dr txpow\r\n");
             setDrTxpow(DRCHG_NOADRACK, decDR((dr_t)LMIC.datarate), KEEP_TXPOW);
             LMIC.adrAckReq = LINK_CHECK_CONT;
             LMIC.opmode |= OP_REJOIN|OP_LINKDEAD;
@@ -1934,14 +1971,16 @@ static void startRxPing (xref2osjob_t osjob) {
 // Decide what to do next for the MAC layer of a device
 static void engineUpdate (void) {
     // Check for ongoing state: scan or TX/RX transaction
+    rs232_print(RS232_PORT_0, "Engine update\r\n");
 
     if( (LMIC.opmode & (OP_SCAN|OP_TXRXPEND|OP_SHUTDOWN)) != 0 ) 
         return;
 
-    if( LMIC.devaddr == 0 && (LMIC.opmode & OP_JOINING) == 0 ) {
+    rs232_print(RS232_PORT_0, "past initial return\r\n");
+    /*if( LMIC.devaddr == 0 && (LMIC.opmode & OP_JOINING) == 0 ) {
         LMIC_startJoining();
         return;
-    }
+    }*/
 
     ostime_t now    = os_getTime();
     ostime_t rxtime = 0;
@@ -1959,7 +1998,7 @@ static void engineUpdate (void) {
 
         // Need to TX some data...
         // Assuming txChnl points to channel which first becomes available again.
-        bit_t jacc = ((LMIC.opmode & (OP_JOINING|OP_REJOIN)) != 0 ? 1 : 0);
+        //bit_t jacc = ((LMIC.opmode & (OP_JOINING|OP_REJOIN)) != 0 ? 1 : 0);
         // Find next suitable channel and return availability time
         if( (LMIC.opmode & OP_NEXTCHNL) != 0 ) {
             txbeg = LMIC.txend = nextTx(now);
@@ -1986,11 +2025,11 @@ static void engineUpdate (void) {
 		#endif
 
         // Earliest possible time vs overhead to setup radio
-        if( txbeg - (now + TX_RAMPUP) < 0 ) {
+        //if( txbeg - (now + TX_RAMPUP) < 0 ) {
             // We could send right now!
         txbeg = now;
             dr_t txdr = (dr_t)LMIC.datarate;
-            if( jacc ) {
+           /* if( jacc ) {
 
                 u1_t ftype;
                 if( (LMIC.opmode & OP_REJOIN) != 0 ) {
@@ -2020,7 +2059,13 @@ static void engineUpdate (void) {
                 }
                 buildDataFrame();
                 LMIC.osjob.func = FUNC_ADDR(updataDone);
-            }
+            }*/
+            rs232_print(RS232_PORT_0, "can send now, do transmit\r\n");
+             
+            buildDataFrame(); //moved to here
+            LMIC.osjob.func = FUNC_ADDR(updataDone);
+
+
             LMIC.rps    = setCr(updr2rps(txdr), (cr_t)LMIC.errcr);
             LMIC.dndr   = txdr;  // carry TX datarate (can be != LMIC.datarate) over to txDone/setupRx1
             LMIC.opmode = (LMIC.opmode & ~(OP_POLL|OP_RNDTX)) | OP_TXRXPEND | OP_NEXTCHNL;
@@ -2028,7 +2073,9 @@ static void engineUpdate (void) {
             updateTx(txbeg);
             os_radio(RADIO_TX);
             return;
-        }
+       /* } else {
+             rs232_print(RS232_PORT_0, "can't transmit yet'\r\n");
+        }*/
 
         // Cannot yet TX
         if( (LMIC.opmode & OP_TRACK) == 0 )
@@ -2037,6 +2084,7 @@ static void engineUpdate (void) {
         if( txbeg == 0 ) // zero indicates no TX pending
             txbeg += 1;  // TX delayed by one tick (insignificant amount of time)
     } else {
+        rs232_print(RS232_PORT_0, "no tx pending\r\n");
         // No TX pending - no scheduled RX
         if( (LMIC.opmode & OP_TRACK) == 0 )
             return;
@@ -2147,6 +2195,7 @@ void LMIC_clrTxData (void) {
 
 
 void LMIC_setTxData (void) {
+    rs232_print(RS232_PORT_0, "LMIC_setTxData\r\n");
     LMIC.opmode |= OP_TXDATA;
     if( (LMIC.opmode & OP_JOINING) == 0 )
         LMIC.txCnt = 0;             // cancel any ongoing TX/RX retries
@@ -2156,6 +2205,7 @@ void LMIC_setTxData (void) {
 
 //
 int LMIC_setTxData2 (u1_t port, xref2u1_t data, u1_t dlen, u1_t confirmed) {
+    rs232_print(RS232_PORT_0, "LMIC_setTxData2\r\n");
     if( dlen > SIZEOFEXPR(LMIC.pendTxData) )
         return -2;
     if( data != (xref2u1_t)0 )

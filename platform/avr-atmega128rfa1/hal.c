@@ -54,7 +54,15 @@ char dest[20];
 // val ==1  => tx 1, rx 0 ; val == 0 => tx 0, rx 1
 void hal_pin_rxtx (u1_t val)
 {
-	//not needed
+	//not needed?
+	if(val) {
+		PORT |=  (1<<PIN_SPI_TX_SWITCH); 
+		PORT &= ~(1<<PIN_SPI_RX_SWITCH);
+	}
+	else {
+		PORT &= ~(1<<PIN_SPI_TX_SWITCH); 
+		PORT |=  (1<<PIN_SPI_RX_SWITCH);
+	}
 }
 
 // set radio NSS pin to given value

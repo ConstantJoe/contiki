@@ -259,6 +259,8 @@ void  LMIC_tryRejoin     (void);
 void LMIC_setSession (u4_t netid, devaddr_t devaddr, xref2u1_t nwkKey, xref2u1_t artKey);
 void LMIC_setLinkCheckMode (bit_t enabled);
 
+
+ void initDefaultChannels (bit_t join);
 // Special APIs - for development or testing
 // !!!See implementation for caveats!!!
 

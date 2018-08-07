@@ -427,17 +427,43 @@ static void configPower () {
     writeReg(RegPaConfig, (u1_t)(0x80|(pw&0xf)));
     writeReg(RegPaDac, readReg(RegPaDac)|0x4);
 
+
+
 #elif CFG_sx1272_radio
     // set PA config (2-17 dBm using PA_BOOST)
+
+    //writeReg(RegOcp, (u1_t)(0x3F)); //turn on OcpTrim, use max value
+    writeReg(RegOcp, (u1_t)(0x00)); //turn off OcpTrim, which limits the current
+    //writeReg(RegPaDac, (u1_t)(0x07)); //write PaDac to enable +20dBm option
+    writeReg(RegPaDac, (u1_t)(0x04)); //write PaDac to disable +20dBm option
     s1_t pw = (s1_t)LMIC.txpow;
 
-    if(pw > 17) {
+    /*if(pw > 17) {
         pw = 17;
     } else if(pw < 2) {
         pw = 2;
+    }*/
+
+    rs232_print(RS232_PORT_0, "writing new txpow\r\n");
+    writeReg(RegPaConfig, (u1_t)(0x80|(pw-2))); //use PA_BOOST
+    //writeReg(RegPaConfig, (u1_t)(pw)); //don't use PA_BOOST
+
+    u1_t x = readReg(RegPaConfig);
+    if(x == (u1_t)(0x80|(pw-2))) {
+        rs232_print(RS232_PORT_0, "successfully changed txpow\r\n");
     }
-    //writeReg(RegPaConfig, (u1_t)(0x80|(pw-2)));
-    writeReg(RegPaConfig, (u1_t)(pw-2)); //NOTE: changed here to specifically not use PA_BOOST - there is a problem with the supply voltage
+    else {
+        rs232_print(RS232_PORT_0, "didn't successfully changed txpow\r\n");   
+    }
+
+    /*u1_t x = readReg(RegPaConfig);
+    if(x == (u1_t)(pw)) {
+        rs232_print(RS232_PORT_0, "successfully changed txpow\r\n");
+    }
+    else {
+        rs232_print(RS232_PORT_0, "didn't successfully changed txpow\r\n");   
+    }*/
+    
 #else
 #error Missing CFG_sx1272_radio/CFG_sx1276_radio
 #endif /* CFG_sx1272_radio */
@@ -488,9 +514,13 @@ static void txfsk () {
 
 static void txlora () {
     // select LoRa modem (from sleep mode)
+    rs232_print(RS232_PORT_0, "txlora\r\n");
+
     opmodeLora();
-    
+    rs232_print(RS232_PORT_0, "wrote opmode lora\r\n");
+
     ASSERT((readReg(RegOpMode) & OPMODE_LORA) != 0);
+    rs232_print(RS232_PORT_0, "asserted it\r\n");
 
     // enter standby mode (required for FIFO loading))
     opmode(OPMODE_STANDBY);
@@ -500,6 +530,7 @@ static void txlora () {
     configChannel();
     // configure output power
     writeReg(RegPaRamp, (readReg(RegPaRamp) & 0xF0) | 0x08); // set PA ramp-up time 50 uSec
+
     configPower();
     // set sync word
     writeReg(LORARegSyncWord, LORA_MAC_PREAMBLE);
@@ -522,6 +553,7 @@ static void txlora () {
     // enable antenna switch for TX
     hal_pin_rxtx(1);
     
+    rs232_print(RS232_PORT_0, "start the transmission\r\n");
     // now we actually start the transmission
     opmode(OPMODE_TX);
 
@@ -551,6 +583,7 @@ static const u1_t rxlorairqmask[] = {
 // start LoRa receiver (time=LMIC.rxtime, timeout=LMIC.rxsyms, result=LMIC.frame[LMIC.dataLen])
 static void rxlora (u1_t rxmode) {
     // select LoRa modem (from sleep mode)
+     rs232_print(RS232_PORT_0, "rxlora\r\n");
     opmodeLora();
 
     ASSERT((readReg(RegOpMode) & OPMODE_LORA) != 0);
@@ -590,10 +623,12 @@ static void rxlora (u1_t rxmode) {
 
     // now instruct the radio to receive
     //NOTE: the clock sync is poor between the two devices so instead of using RXSingle (which is hard to get to search for the preamble at exactly the right time), we're using RX continuous and moving back to standby mode ourselves.
+    //TODO: check if rxmode_single here works
     if (rxmode == RXMODE_SINGLE) { // single rx
         hal_enableIRQs();
         hal_wait(LMIC.rxtime - os_getTime()); 
         hal_disableIRQs();
+        rs232_print(RS232_PORT_0, "go to rx (single)\r\n");
         opmode(OPMODE_RX_SINGLE);
 
     } else { // continous rx (scan or rssi)
@@ -710,13 +745,36 @@ static const u2_t LORA_RXDONE_FIXUP[] = {
 // (radio goes to stanby mode after tx/rx operations)
 void radio_irq_handler (u1_t dio) {
 
+    rs232_print(RS232_PORT_0, "in radio irq handler!\r\n");
+
     ostime_t now = os_getTime();
     if( (readReg(RegOpMode) & OPMODE_LORA) != 0) { // LORA modem
+        rs232_print(RS232_PORT_0, "lora modem!\r\n");
         u1_t flags = readReg(LORARegIrqFlags);
+
+        rs232_print(RS232_PORT_0, "flags: ");
+        //rs232_print(RS232_PORT_0, (char *) flags);
+        char array [2];
+        array [0] = (char) flags;
+        array [1] = '\0';
+        rs232_print(RS232_PORT_0, array);
+        rs232_print(RS232_PORT_0, "\r\n");
+
+        if(flags) {
+            rs232_print(RS232_PORT_0, "flags is not 0\r\n");
+        }
+        else {
+            rs232_print(RS232_PORT_0, "flags is 0\r\n");  
+            //should just return here?
+            //return; 
+        }
+
         if( flags & IRQ_LORA_TXDONE_MASK ) {
             // save exact tx time
+            rs232_print(RS232_PORT_0, "txdone mask\r\n");
             LMIC.txend = now - us2osticks(43); // TXDONE FIXUP
         } else if( flags & IRQ_LORA_RXDONE_MASK ) {
+            rs232_print(RS232_PORT_0, "rxdone mask\r\n");
             // save exact rx time
             if(getBw(LMIC.rps) == BW125) {
                 now -= LORA_RXDONE_FIXUP[getSf(LMIC.rps)];
@@ -738,11 +796,28 @@ void radio_irq_handler (u1_t dio) {
 
             //Note: added by me: changed from Recv Single to Recv Continuous as have not yet fully synced the timer, and so keep missing the preamble.
             //Here we change from Recv Continuous back to standby mode
-            opmode(OPMODE_STANDBY);
+            //opmode(OPMODE_STANDBY);
 
         } else if( flags & IRQ_LORA_RXTOUT_MASK ) {
+            rs232_print(RS232_PORT_0, "timeout mask\r\n");
             // indicate timeout
             LMIC.dataLen = 0;
+        }
+
+        if( flags & IRQ_LORA_CRCERR_MASK ) {
+            rs232_print(RS232_PORT_0, "crcerr mask\r\n");
+        }
+        if( flags & IRQ_LORA_HEADER_MASK ) {
+            rs232_print(RS232_PORT_0, "header mask\r\n");
+        }
+        if( flags & IRQ_LORA_CDDONE_MASK ) {
+            rs232_print(RS232_PORT_0, "cddone mask\r\n");
+        }
+        if( flags & IRQ_LORA_FHSSCH_MASK ) {
+            rs232_print(RS232_PORT_0, "fhssch mask\r\n");
+        }
+        if( flags & IRQ_LORA_CDDETD_MASK ) {
+            rs232_print(RS232_PORT_0, "cddetd mask\r\n");
         }
     
         // mask all radio IRQs
@@ -752,6 +827,7 @@ void radio_irq_handler (u1_t dio) {
         //rs232_print(RS232_PORT_0, "After the if!\r\n");
     } 
     else{ // FSK modem
+        rs232_print(RS232_PORT_0, "fsk modem!\r\n");
         u1_t flags1 = readReg(FSKRegIrqFlags1);
         u1_t flags2 = readReg(FSKRegIrqFlags2);
 
@@ -777,6 +853,7 @@ void radio_irq_handler (u1_t dio) {
     }
 
     // go from stanby to sleep
+    rs232_print(RS232_PORT_0, "go to sleep\r\n");
     opmode(OPMODE_SLEEP);
     // run os job (use preset func ptr)
     if(LMIC.osjob.func){
@@ -787,6 +864,8 @@ void radio_irq_handler (u1_t dio) {
 }
 
 void os_radio (u1_t mode) {
+    rs232_print(RS232_PORT_0, "change mode\r\n");
+
     hal_disableIRQs();
     switch (mode) {
       case RADIO_RST:
